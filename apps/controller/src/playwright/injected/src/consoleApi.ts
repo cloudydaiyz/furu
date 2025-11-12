@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import { asLocator } from '@isomorphic/locatorGenerators';
-import { getByAltTextSelector, getByLabelSelector, getByPlaceholderSelector, getByRoleSelector, getByTestIdSelector, getByTextSelector, getByTitleSelector } from '@isomorphic/locatorUtils';
-import { escapeForTextSelector } from '@isomorphic/stringUtils';
+import { asLocator } from '../../isomorphic/locatorGenerators';
+import { getByAltTextSelector, getByLabelSelector, getByPlaceholderSelector, getByRoleSelector, getByTestIdSelector, getByTextSelector, getByTitleSelector } from '../../isomorphic/locatorUtils';
+import { escapeForTextSelector } from '../../isomorphic/stringUtils';
 
 import type { InjectedScript } from './injectedScript';
-import type { Language } from '@isomorphic/locatorGenerators';
-import type { ByRoleOptions } from '@isomorphic/locatorUtils';
+import type { Language } from '../../isomorphic/locatorGenerators';
+import type { ByRoleOptions } from '../../isomorphic/locatorUtils';
 import type { AriaTreeOptions } from './ariaSnapshot';
 
 const selectorSymbol = Symbol('selector');
@@ -142,6 +142,6 @@ export class ConsoleAPI {
   private _resume() {
     if (!this._injectedScript.window.__pw_resume)
       return false;
-    this._injectedScript.window.__pw_resume().catch(() => {});
+    this._injectedScript.window.__pw_resume().catch(() => { });
   }
 }

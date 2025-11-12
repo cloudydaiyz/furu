@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-import { parseAttributeSelector } from '@isomorphic/selectorParser';
-import { normalizeWhiteSpace } from '@isomorphic/stringUtils';
+import { parseAttributeSelector } from '../../isomorphic/selectorParser';
+import { normalizeWhiteSpace } from '../../isomorphic/stringUtils';
 
 import { beginAriaCaches, endAriaCaches, getAriaChecked, getAriaDisabled, getAriaExpanded, getAriaLevel, getAriaPressed, getAriaRole, getAriaSelected, getElementAccessibleName, isElementHiddenForAria, kAriaCheckedRoles, kAriaExpandedRoles, kAriaLevelRoles, kAriaPressedRoles, kAriaSelectedRoles } from './roleUtils';
 import { matchesAttributePart } from './selectorUtils';
 
-import type { AttributeSelectorOperator, AttributeSelectorPart } from '@isomorphic/selectorParser';
+import type { AttributeSelectorOperator, AttributeSelectorPart } from '../../isomorphic/selectorParser';
 import type { SelectorEngine, SelectorRoot } from './selectorEngine';
 
 type RoleEngineOptions = {
   role: string;
   name?: string | RegExp;
-  nameOp?: '='|'*='|'|='|'^='|'$='|'~=';
+  nameOp?: '=' | '*=' | '|=' | '^=' | '$=' | '~=';
   exact?: boolean;
   checked?: boolean | 'mixed';
   pressed?: boolean | 'mixed';

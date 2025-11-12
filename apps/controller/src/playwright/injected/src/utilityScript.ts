@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { parseEvaluationResultValue, serializeAsCallArgument } from '@isomorphic/utilityScriptSerializers';
+import { parseEvaluationResultValue, serializeAsCallArgument } from '../../isomorphic/utilityScriptSerializers';
 
 // Keep in sync with eslint.config.mjs
 export type Builtins = {

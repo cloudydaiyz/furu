@@ -14,8 +14,8 @@
   limitations under the License.
 */
 
-import type { Language } from '@isomorphic/locatorGenerators';
-import type { AriaTemplateNode } from '@isomorphic/ariaSnapshot';
+import type { Language } from '../../../isomorphic/locatorGenerators';
+import type { AriaTemplateNode } from '../../../isomorphic/ariaSnapshot';
 
 export type Point = { x: number; y: number };
 

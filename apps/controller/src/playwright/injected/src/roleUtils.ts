@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import * as css from '@isomorphic/cssTokenizer';
+import * as css from '../../isomorphic/cssTokenizer';
 
 import { beginDOMCaches, closestCrossShadow, elementSafeTagName, enclosingShadowRootOrDocument, endDOMCaches, getElementComputedStyle, isElementStyleVisibilityVisible, isVisibleTextNode, parentElementOrShadowHost } from './domUtils';
 
-import type { AriaRole } from '@isomorphic/ariaSnapshot';
+import type { AriaRole } from '../../isomorphic/ariaSnapshot';
 
 function hasExplicitAccessibleName(e: Element) {
   return e.hasAttribute('aria-label') || e.hasAttribute('aria-labelledby');
@@ -383,7 +383,7 @@ export function getCSSContent(element: Element, pseudo?: '::before' | '::after')
     // to pass "name_file-label-inline-block-styles-manual.html"
     const display = style?.display || 'inline';
     if (display !== 'inline')
-      content =  ' ' + content + ' ';
+      content = ' ' + content + ' ';
   }
 
   if (cache)
@@ -534,7 +534,7 @@ function getAriaInvalid(element: Element): 'false' | 'true' | 'grammar' | 'spell
 }
 
 function getValidityInvalid(element: Element) {
-  if ('validity' in element){
+  if ('validity' in element) {
     const validity = element.validity as ValidityState | undefined;
     return validity?.valid === false;
   }
@@ -559,10 +559,10 @@ export function getElementAccessibleErrorMessage(element: Element): string {
       // Ideally, this should be a separate "embeddedInErrorMessage", but it would follow the exact same rules.
       // Relevant vague spec: https://w3c.github.io/core-aam/#ariaErrorMessage.
       const parts = errorMessages.map(errorMessage => asFlatString(
-          getTextAlternativeInternal(errorMessage, {
-            visitedElements: new Set(),
-            embeddedInDescribedBy: { element: errorMessage, hidden: isElementHiddenForAria(errorMessage) },
-          })
+        getTextAlternativeInternal(errorMessage, {
+          visitedElements: new Set(),
+          embeddedInDescribedBy: { element: errorMessage, hidden: isElementHiddenForAria(errorMessage) },
+        })
       ));
       accessibleErrorMessage = parts.join(' ').trim();
     }
@@ -878,9 +878,9 @@ function getTextAlternativeInternal(element: Element, options: AccessibleNameOpt
 
   // step 2f + step 2h.
   if (allowsNameFromContent(role, options.embeddedInTargetElement === 'descendant') ||
-      shouldNameFromContentForSummary ||
-      !!options.embeddedInLabelledBy || !!options.embeddedInDescribedBy ||
-      !!options.embeddedInLabel || !!options.embeddedInNativeTextAlternative) {
+    shouldNameFromContentForSummary ||
+    !!options.embeddedInLabelledBy || !!options.embeddedInDescribedBy ||
+    !!options.embeddedInLabel || !!options.embeddedInNativeTextAlternative) {
     options.visitedElements.add(element);
     const accessibleName = innerAccumulatedElementText(element, childOptions);
     // Spec says "Return the accumulated text if it is not the empty string". However, that is not really

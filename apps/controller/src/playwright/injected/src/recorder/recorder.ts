@@ -16,14 +16,14 @@
 
 import clipPaths from './clipPaths';
 
-import type { Point } from '@isomorphic/types';
+import type { Point } from '../../../isomorphic/types';
 import type { Highlight, HighlightEntry } from '../highlight';
 import type { InjectedScript } from '../injectedScript';
 import type { ElementText } from '../selectorUtils';
-import type * as actions from '@recorder/actions';
-import type { ElementInfo, Mode, OverlayState, UIState } from '@recorder/recorderTypes';
-import type { Language } from '@isomorphic/locatorGenerators';
-import type { AriaNode, AriaSnapshot } from '@injected/ariaSnapshot';
+import type * as actions from '../../../recorder/src/actions';
+import type { ElementInfo, Mode, OverlayState, UIState } from '../../../recorder/src/recorderTypes';
+import type { Language } from '../../../isomorphic/locatorGenerators';
+import type { AriaNode, AriaSnapshot } from '../ariaSnapshot';
 
 const HighlightColors = {
   multiple: '#f6b26b7f',
@@ -1709,7 +1709,7 @@ export class Recorder {
       if (action.preconditionSelector === action.selector)
         action.preconditionSelector = undefined;
     }
-    await this._delegate.performAction?.(action).catch(() => {});
+    await this._delegate.performAction?.(action).catch(() => { });
   }
 
   recordAction(action: actions.Action) {
@@ -1844,7 +1844,7 @@ function buttonForEvent(event: MouseEvent): 'left' | 'middle' | 'right' {
   return 'left';
 }
 
-function positionForEvent(event: MouseEvent): Point |undefined {
+function positionForEvent(event: MouseEvent): Point | undefined {
   const targetElement = (event.target as HTMLElement);
   if (targetElement.nodeName !== 'CANVAS')
     return;

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import { serializeAsCallArgument } from '@isomorphic/utilityScriptSerializers';
+import { serializeAsCallArgument } from '../../isomorphic/utilityScriptSerializers';
 
-import type { SerializedValue } from '@isomorphic/utilityScriptSerializers';
+import type { SerializedValue } from '../../isomorphic/utilityScriptSerializers';
 
 export type BindingPayload = {
   name: string;

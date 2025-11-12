@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import { parseEvaluationResultValue, serializeAsCallArgument } from '@isomorphic/utilityScriptSerializers';
+import { parseEvaluationResultValue, serializeAsCallArgument } from '../../isomorphic/utilityScriptSerializers';
 
-import type * as channels from '@protocol/channels';
+import type * as channels from '../../protocol/src/channels';
 
 export type SerializedStorage = Omit<channels.OriginStorage, 'origin'>;
 
@@ -142,7 +142,7 @@ export class StorageScript {
       const indexedDB = await Promise.all(databases.map(db => this._collectDB(db)));
       return { localStorage, indexedDB };
     } catch (e) {
-      throw new Error('Unable to serialize IndexedDB: ' + e.message);
+      throw new Error('Unable to serialize IndexedDB: ' + String(e));
     }
   }
 
@@ -167,10 +167,10 @@ export class StorageScript {
       const objectStore = transaction.objectStore(store.name);
       await Promise.all(store.records.map(async record => {
         await this._idbRequestToPromise(
-            objectStore.add(
-                record.value ?? parseEvaluationResultValue(record.valueEncoded),
-                record.key ?? parseEvaluationResultValue(record.keyEncoded),
-            )
+          objectStore.add(
+            record.value ?? parseEvaluationResultValue(record.valueEncoded),
+            record.key ?? parseEvaluationResultValue(record.keyEncoded),
+          )
         );
       }));
     }));
@@ -186,9 +186,9 @@ export class StorageScript {
       // Unfortunately, loading next page in Chromium still takes 5 seconds waiting for
       // some operation on this bogus service worker to finish.
       if (!r.installing && !r.waiting && !r.active)
-        r.unregister().catch(() => {});
+        r.unregister().catch(() => { });
       else
-        await r.unregister().catch(() => {});
+        await r.unregister().catch(() => { });
     }));
 
     try {
@@ -199,7 +199,7 @@ export class StorageScript {
       }
       await Promise.all((originState?.indexedDB ?? []).map(dbInfo => this._restoreDB(dbInfo)));
     } catch (e) {
-      throw new Error('Unable to restore IndexedDB: ' + e.message);
+      throw new Error('Unable to restore IndexedDB: ' + String(e));
     }
 
     this._global.sessionStorage.clear();

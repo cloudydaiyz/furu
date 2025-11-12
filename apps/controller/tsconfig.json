@@ -21,27 +21,13 @@
     "noImplicitOverride": true,
     "useUnknownInCatchVariables": false,
     "skipLibCheck": true,
-    "paths": {
-      /*
-        The following two serve different purposes:
-         - @foo/* is for importing types only,
-         - .../lib/* means require dependency
-      */
-      "@injected/*": [
-        "./src/playwright/injected/src/*"
-      ],
-      "@isomorphic/*": [
-        "./src/playwright/isomorphic/*"
-      ],
-      "@protocol/*": [
-        "./src/playwright/protocol/src/*"
-      ],
-      "@recorder/*": [
-        "./src/playwright/recorder/src/*"
-      ],
-    },
   },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.d.ts"
+  ],
   "exclude": [
-    "playwright.config.ts"
+    "playwright.config.ts",
   ]
 }

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import { normalizeWhiteSpace } from '@isomorphic/stringUtils';
+import { normalizeWhiteSpace } from '../../isomorphic/stringUtils';
 
 import { getAriaLabelledByElements } from './roleUtils';
 
-import type { AttributeSelectorPart } from '@isomorphic/selectorParser';
+import type { AttributeSelectorPart } from '../../isomorphic/selectorParser';
 
 export function matchesComponentAttribute(obj: any, attr: AttributeSelectorPart) {
   for (const token of attr.jsonPath) {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { parseAttributeSelector } from '@isomorphic/selectorParser';
+import { parseAttributeSelector } from '../../isomorphic/selectorParser';
 
 import { isInsideScope } from './domUtils';
 import { matchesComponentAttribute } from './selectorUtils';
@@ -70,7 +70,7 @@ const classify = (str: string) => {
 
 function buildComponentsTreeVue3(instance: VueVNode): ComponentNode {
   // @see https://github.com/vuejs/devtools/blob/e7132f3392b975e39e1d9a23cf30456c270099c2/packages/app-backend-vue3/src/components/util.ts#L47
-  function getComponentTypeName(options: any): string|undefined {
+  function getComponentTypeName(options: any): string | undefined {
     const name = options.name || options._componentTag || options.__playwright_guessedName;
     if (name)
       return name;
@@ -169,7 +169,7 @@ function buildComponentsTreeVue3(instance: VueVNode): ComponentNode {
 
 function buildComponentsTreeVue2(instance: VueVNode): ComponentNode {
   // @see https://github.com/vuejs/devtools/blob/e7132f3392b975e39e1d9a23cf30456c270099c2/packages/shared-utils/src/util.ts#L302
-  function getComponentName(options: any): string|undefined {
+  function getComponentName(options: any): string | undefined {
     const name = options.displayName || options.name || options._componentTag;
     if (name)
       return name;
@@ -215,7 +215,7 @@ function filterComponentsTree(treeNode: ComponentNode, searchFn: (node: Componen
   return result;
 }
 
-type VueRoot = {version: number, root: VueVNode};
+type VueRoot = { version: number, root: VueVNode };
 function findVueRoots(root: Document | ShadowRoot, roots: VueRoot[] = []): VueRoot[] {
   const document = root.ownerDocument || root;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { escapeForAttributeSelector, escapeForTextSelector, escapeRegExp, quoteCSSAttributeValue } from '@isomorphic/stringUtils';
+import { escapeForAttributeSelector, escapeForTextSelector, escapeRegExp, quoteCSSAttributeValue } from '../../isomorphic/stringUtils';
 
 import { beginDOMCaches, closestCrossShadow, endDOMCaches, isElementVisible, isInsideScope, parentElementOrShadowHost } from './domUtils';
 import { beginAriaCaches, endAriaCaches, getAriaRole, getElementAccessibleName } from './roleUtils';
@@ -458,7 +458,7 @@ function joinTokens(tokens: SelectorToken[]): string {
   const parts = [];
   let lastEngine = '';
   for (const { engine, selector } of tokens) {
-    if (parts.length  && (lastEngine !== 'css' || engine !== 'css' || selector.startsWith(':nth-match(')))
+    if (parts.length && (lastEngine !== 'css' || engine !== 'css' || selector.startsWith(':nth-match(')))
       parts.push('>>');
     lastEngine = engine;
     if (engine === 'css')
@@ -570,12 +570,12 @@ function cssEscapeCharacter(s: string, i: number): string {
   if (c === 0x0000)
     return '\uFFFD';
   if ((c >= 0x0001 && c <= 0x001f) ||
-      (c >= 0x0030 && c <= 0x0039 && (i === 0 || (i === 1 && s.charCodeAt(0) === 0x002d))))
+    (c >= 0x0030 && c <= 0x0039 && (i === 0 || (i === 1 && s.charCodeAt(0) === 0x002d))))
     return '\\' + c.toString(16) + ' ';
   if (i === 0 && c === 0x002d && s.length === 1)
     return '\\' + s.charAt(i);
   if (c >= 0x0080 || c === 0x002d || c === 0x005f || (c >= 0x0030 && c <= 0x0039) ||
-      (c >= 0x0041 && c <= 0x005a) || (c >= 0x0061 && c <= 0x007a))
+    (c >= 0x0041 && c <= 0x005a) || (c >= 0x0061 && c <= 0x007a))
     return s.charAt(i);
   return '\\' + s.charAt(i);
 }

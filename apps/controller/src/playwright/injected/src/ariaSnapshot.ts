@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import { ariaPropsEqual } from '@isomorphic/ariaSnapshot';
-import { escapeRegExp, longestCommonSubstring, normalizeWhiteSpace } from '@isomorphic/stringUtils';
+import { ariaPropsEqual } from '../../isomorphic/ariaSnapshot';
+import { escapeRegExp, longestCommonSubstring, normalizeWhiteSpace } from '../../isomorphic/stringUtils';
 
 import { computeBox, getElementComputedStyle, isElementVisible } from './domUtils';
 import * as roleUtils from './roleUtils';
 import { yamlEscapeKeyIfNeeded, yamlEscapeValueIfNeeded } from './yaml';
 
-import type { AriaProps, AriaRegex, AriaTextValue, AriaRole, AriaTemplateNode } from '@isomorphic/ariaSnapshot';
+import type { AriaProps, AriaRegex, AriaTextValue, AriaRole, AriaTemplateNode } from '../../isomorphic/ariaSnapshot';
 import type { Box } from './domUtils';
 
 // Note: please keep in sync with ariaNodesEqual() below.
@@ -530,7 +530,7 @@ function compareSnapshots(ariaSnapshot: AriaSnapshot, previousSnapshot: AriaSnap
     let same: boolean = ariaNode.children.length === previousNode?.children.length && ariaNodesEqual(ariaNode, previousNode);
     let canBeSkipped = same;
 
-    for (let childIndex = 0 ; childIndex < ariaNode.children.length; childIndex++) {
+    for (let childIndex = 0; childIndex < ariaNode.children.length; childIndex++) {
       const child = ariaNode.children[childIndex];
       const previousChild = previousNode?.children[childIndex];
       if (typeof child === 'string') {

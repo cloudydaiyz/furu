@@ -18,8 +18,8 @@ import { Recorder } from './recorder';
 
 import type { InjectedScript } from '../injectedScript';
 import type { RecorderDelegate } from './recorder';
-import type * as actions from '@recorder/actions';
-import type { ElementInfo, Mode, OverlayState, UIState } from '@recorder/recorderTypes';
+import type * as actions from '../../../recorder/src/actions';
+import type { ElementInfo, Mode, OverlayState, UIState } from '../../../recorder/src/recorderTypes';
 
 interface Embedder {
   __pw_recorderPerformAction(action: actions.PerformOnRecordAction): Promise<void>;

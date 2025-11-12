@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { parseAttributeSelector } from '@isomorphic/selectorParser';
+import { parseAttributeSelector } from '../../isomorphic/selectorParser';
 
 import { isInsideScope } from './domUtils';
 import { matchesComponentAttribute } from './selectorUtils';
@@ -84,7 +84,7 @@ function getChildren(reactElement: ReactVNode): ReactVNode[] {
   // @see https://github.com/baruchvlz/resq/blob/5c15a5e04d3f7174087248f5a158c3d6dcc1ec72/src/utils.js#L192
   if (reactElement.child) {
     const children: ReactVNode[] = [];
-    for (let child: ReactVNode|undefined = reactElement.child; child; child = child.sibling)
+    for (let child: ReactVNode | undefined = reactElement.child; child; child = child.sibling)
       children.push(child);
     return children;
   }

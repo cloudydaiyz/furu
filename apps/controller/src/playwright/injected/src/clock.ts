@@ -57,7 +57,7 @@ type Time = {
   origin: WallTime;
 };
 
-type LogEntryType = 'fastForward' |'install' | 'pauseAt' | 'resume' | 'runFor' | 'setFixedTime' | 'setSystemTime';
+type LogEntryType = 'fastForward' | 'install' | 'pauseAt' | 'resume' | 'runFor' | 'setFixedTime' | 'setSystemTime';
 
 type RealTimeTimer = {
   callAt: Ticks;
@@ -129,7 +129,7 @@ export class ClockController {
   }
 
   private _innerSetTime(time: WallTime) {
-    this._now.time  = time;
+    this._now.time = time;
     this._now.isFixedTime = false;
     if (this._now.origin < 0)
       this._now.origin = this._now.time;
@@ -358,7 +358,7 @@ export class ClockController {
           // eslint-disable-next-line no-restricted-globals
           (() => { globalThis.eval(timer.func); })();
         } catch (e) {
-          error = e;
+          error = e as Error;
         }
         await new Promise<void>(f => this._embedder.setTimeout(f));
         return { timerFound: true, error };
@@ -374,7 +374,7 @@ export class ClockController {
       try {
         timer.func.apply(null, args);
       } catch (e) {
-        error = e;
+        error = e as Error;
       }
       await new Promise<void>(f => this._embedder.setTimeout(f));
       return { timerFound: true, error };
@@ -420,7 +420,7 @@ export class ClockController {
         const clear = getClearHandler(type);
         const schedule = getScheduleHandler(timer.type);
         throw new Error(
-            `Cannot clear timer: timer created with ${schedule}() but cleared with ${clear}()`,
+          `Cannot clear timer: timer created with ${schedule}() but cleared with ${clear}()`,
         );
       }
     }
@@ -505,22 +505,22 @@ function createDate(clock: ClockController, NativeDate: Builtins['Date']): Built
         return new NativeDate(year, month, date, hour, minute);
       case 6:
         return new NativeDate(
-            year,
-            month,
-            date,
-            hour,
-            minute,
-            second,
+          year,
+          month,
+          date,
+          hour,
+          minute,
+          second,
         );
       default:
         return new NativeDate(
-            year,
-            month,
-            date,
-            hour,
-            minute,
-            second,
-            ms,
+          year,
+          month,
+          date,
+          hour,
+          minute,
+          second,
+          ms,
         );
     }
   }
@@ -545,7 +545,7 @@ function createIntl(clock: ClockController, NativeIntl: Builtins['Intl']): Built
   for (const key of Object.getOwnPropertyNames(NativeIntl) as (keyof Builtins['Intl'])[])
     ClockIntl[key] = NativeIntl[key];
 
-  ClockIntl.DateTimeFormat = function(...args: any[]) {
+  ClockIntl.DateTimeFormat = function (...args: any[]) {
     const realFormatter = new NativeIntl.DateTimeFormat(...args);
     const formatter: Intl.DateTimeFormat = {
       formatRange: realFormatter.formatRange.bind(realFormatter),
@@ -559,7 +559,7 @@ function createIntl(clock: ClockController, NativeIntl: Builtins['Intl']): Built
   };
 
   ClockIntl.DateTimeFormat.prototype = Object.create(
-      NativeIntl.DateTimeFormat.prototype,
+    NativeIntl.DateTimeFormat.prototype,
   );
 
   ClockIntl.DateTimeFormat.supportedLocalesOf =
@@ -710,7 +710,7 @@ function fakePerformance(clock: ClockController, performance: Builtins['performa
     if (key === 'getEntries' || key === 'getEntriesByName' || key === 'getEntriesByType')
       result[key] = () => [];
     else
-      result[key] = () => {};
+      result[key] = () => { };
   }
   return result;
 }

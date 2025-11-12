@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import { parseAriaSnapshot } from '@isomorphic/ariaSnapshot';
-import { asLocator } from '@isomorphic/locatorGenerators';
-import { parseAttributeSelector, parseSelector, stringifySelector, visitAllSelectorParts } from '@isomorphic/selectorParser';
-import { cacheNormalizedWhitespaces, normalizeWhiteSpace, trimStringWithEllipsis } from '@isomorphic/stringUtils';
+import { parseAriaSnapshot } from '../../isomorphic/ariaSnapshot';
+import { asLocator } from '../../isomorphic/locatorGenerators';
+import { parseAttributeSelector, parseSelector, stringifySelector, visitAllSelectorParts } from '../../isomorphic/selectorParser';
+import { cacheNormalizedWhitespaces, normalizeWhiteSpace, trimStringWithEllipsis } from '../../isomorphic/stringUtils';
 
 import { generateAriaTree, getAllElementsMatchingExpectAriaTemplate, matchesExpectAriaTemplate, renderAriaTree } from './ariaSnapshot';
 import { beginDOMCaches, enclosingShadowRootOrDocument, endDOMCaches, isElementVisible, isInsideScope, parentElementOrShadowHost, setGlobalOptions } from './domUtils';
@@ -34,11 +34,11 @@ import { XPathEngine } from './xpathSelectorEngine';
 import { ConsoleAPI } from './consoleApi';
 import { UtilityScript } from './utilityScript';
 
-import type { AriaTemplateNode } from '@isomorphic/ariaSnapshot';
-import type { CSSComplexSelectorList } from '@isomorphic/cssParser';
-import type { Language } from '@isomorphic/locatorGenerators';
-import type { NestedSelectorBody, ParsedSelector, ParsedSelectorPart } from '@isomorphic/selectorParser';
-import type * as channels from '@protocol/channels';
+import type { AriaTemplateNode } from '../../isomorphic/ariaSnapshot';
+import type { CSSComplexSelectorList } from '../../isomorphic/cssParser';
+import type { Language } from '../../isomorphic/locatorGenerators';
+import type { NestedSelectorBody, ParsedSelector, ParsedSelectorPart } from '../../isomorphic/selectorParser';
+import type * as channels from '../../protocol/src/channels';
 import type { AriaSnapshot, AriaTreeOptions } from './ariaSnapshot';
 import type { LayoutSelectorName } from './layoutSelectorUtils';
 import type { SelectorEngine, SelectorRoot } from './selectorEngine';
@@ -585,7 +585,7 @@ export class InjectedScript {
       observer.observe(element);
       // Firefox doesn't call IntersectionObserver callback unless
       // there are rafs.
-      this.utils.builtins.requestAnimationFrame(() => {});
+      this.utils.builtins.requestAnimationFrame(() => { });
     });
   }
 
@@ -1176,7 +1176,7 @@ export class InjectedScript {
         try {
           event = new DeviceOrientationEvent(type, eventInit);
         } catch {
-          const { bubbles, cancelable, alpha, beta, gamma, absolute } = eventInit as {bubbles: boolean, cancelable: boolean, alpha: number, beta: number, gamma: number, absolute: boolean};
+          const { bubbles, cancelable, alpha, beta, gamma, absolute } = eventInit as { bubbles: boolean, cancelable: boolean, alpha: number, beta: number, gamma: number, absolute: boolean };
           event = this.document.createEvent('DeviceOrientationEvent') as WebKitLegacyDeviceOrientationEvent;
           event.initDeviceOrientationEvent(type, bubbles, cancelable, alpha, beta, gamma, absolute);
         }
@@ -1185,7 +1185,7 @@ export class InjectedScript {
         try {
           event = new DeviceMotionEvent(type, eventInit);
         } catch {
-          const { bubbles, cancelable, acceleration, accelerationIncludingGravity, rotationRate, interval } = eventInit as {bubbles: boolean, cancelable: boolean, acceleration: DeviceMotionEventAcceleration, accelerationIncludingGravity: DeviceMotionEventAcceleration, rotationRate: DeviceMotionEventRotationRate, interval: number};
+          const { bubbles, cancelable, acceleration, accelerationIncludingGravity, rotationRate, interval } = eventInit as { bubbles: boolean, cancelable: boolean, acceleration: DeviceMotionEventAcceleration, accelerationIncludingGravity: DeviceMotionEventAcceleration, rotationRate: DeviceMotionEventRotationRate, interval: number };
           event = this.document.createEvent('DeviceMotionEvent') as WebKitLegacyDeviceMotionEvent;
           event.initDeviceMotionEvent(type, bubbles, cancelable, acceleration, accelerationIncludingGravity, rotationRate, interval);
         }
@@ -1769,3 +1769,6 @@ function deepEquals(a: any, b: any): boolean {
 
   return false;
 }
+
+console.log("injected")
+console.log("injectedScript output", InjectedScript)

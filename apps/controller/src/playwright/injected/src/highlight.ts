@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import { asLocator } from '@isomorphic/locatorGenerators';
-import { stringifySelector } from '@isomorphic/selectorParser';
+import { asLocator } from '../../isomorphic/locatorGenerators';
+import { stringifySelector } from '../../isomorphic/selectorParser';
 
 import { highlightCSS } from './highlight.css';
 
-import type { Language } from '@isomorphic/locatorGenerators';
-import type { ParsedSelector } from '@isomorphic/selectorParser';
+import type { Language } from '../../isomorphic/locatorGenerators';
+import type { ParsedSelector } from '../../isomorphic/selectorParser';
 import type { InjectedScript } from './injectedScript';
 
 

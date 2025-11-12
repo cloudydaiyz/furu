@@ -2,8 +2,10 @@
   "name": "controller",
   "version": "1.0.0",
   "main": "index.js",
-  "type": "module",
-  "scripts": {},
+  "scripts": {
+    "build": "tsc && node scripts/generate-injected.mjs",
+    "start": "node dist/sample.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -11,6 +13,7 @@
   "devDependencies": {
     "@playwright/test": "^1.56.1",
     "@types/node": "^24.10.0",
+    "esbuild": "^0.27.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
