@@ -15,7 +15,7 @@
  */
 
 import { parseAriaSnapshot } from '../../isomorphic/ariaSnapshot';
-import { asLocator } from '../../isomorphic/locatorGenerators';
+import { asLocator, asLocators } from '../../isomorphic/locatorGenerators';
 import { parseAttributeSelector, parseSelector, stringifySelector, visitAllSelectorParts } from '../../isomorphic/selectorParser';
 import { cacheNormalizedWhitespaces, normalizeWhiteSpace, trimStringWithEllipsis } from '../../isomorphic/stringUtils';
 
@@ -100,6 +100,7 @@ export class InjectedScript {
   // module-level globals will be duplicated, which leads to subtle bugs.
   readonly utils = {
     asLocator,
+    asLocators,
     cacheNormalizedWhitespaces,
     elementText,
     getAriaRole,

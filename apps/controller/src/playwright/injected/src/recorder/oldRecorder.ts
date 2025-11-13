@@ -35,7 +35,7 @@ const HighlightColors = {
 export interface RecorderDelegate {
   performAction?(action: actions.PerformOnRecordAction): Promise<void>;
   recordAction?(action: actions.Action): Promise<void>;
-  elementPicked?(elementInfo: ElementInfo & { element: Element }): Promise<void>;
+  elementPicked?(elementInfo: ElementInfo): Promise<void>;
   setMode?(mode: Mode): Promise<void>;
   setOverlayState?(state: OverlayState): Promise<void>;
   highlightUpdated?(): void;
@@ -1313,7 +1313,6 @@ class Overlay {
   }
 
   private _hideOverlay() {
-    // hide overlay here
     this._overlayElement.setAttribute('hidden', 'true');
   }
 
@@ -1388,7 +1387,7 @@ export class Recorder {
   readonly document: Document;
   private _delegate: RecorderDelegate = {};
 
-  constructor(injectedScript: InjectedScript, options?: { recorderMode?: 'default' | 'api', disableOverlay?: boolean }) {
+  constructor(injectedScript: InjectedScript, options?: { recorderMode?: 'default' | 'api' }) {
     this.document = injectedScript.document;
     this.injectedScript = injectedScript;
     this.highlight = injectedScript.createHighlight();
@@ -1405,7 +1404,7 @@ export class Recorder {
     };
     this._currentTool = this._tools.none;
     this._currentTool.install?.();
-    if (!options?.disableOverlay && injectedScript.window.top === injectedScript.window) {
+    if (injectedScript.window.top === injectedScript.window) {
       this.overlay = new Overlay(this);
       this.overlay.setUIState(this.state);
     }
@@ -1662,16 +1661,13 @@ export class Recorder {
   updateHighlight(model: HighlightModel | null, userGesture: boolean) {
     this._lastHighlightedSelector = undefined;
     this._lastHighlightedAriaTemplateJSON = 'undefined';
-    this._updateHighlight(model, userGesture, true);
+    this._updateHighlight(model, userGesture);
   }
 
-  private _updateHighlight(model: HighlightModel | null, userGesture: boolean, disableHighlight: boolean) {
+  private _updateHighlight(model: HighlightModel | null, userGesture: boolean) {
     let tooltipText = model?.tooltipText;
     if (tooltipText === undefined && model?.selector)
       tooltipText = this.injectedScript.utils.asLocator(this.state.language, model.selector);
-    if (disableHighlight)
-      tooltipText = undefined;
-
     if (model)
       this.highlight.updateHighlight(model.elements.map(element => ({ element, color: model.color, tooltipText })));
     else
@@ -1726,9 +1722,8 @@ export class Recorder {
   }
 
   elementPicked(selector: string, model: HighlightModel) {
-    const element = model.elements[0];
-    const ariaSnapshot = this.injectedScript.ariaSnapshot(element, { mode: 'expect' });
-    void this._delegate.elementPicked?.({ selector, ariaSnapshot, element });
+    const ariaSnapshot = this.injectedScript.ariaSnapshot(model.elements[0], { mode: 'expect' });
+    void this._delegate.elementPicked?.({ selector, ariaSnapshot });
   }
 }
 

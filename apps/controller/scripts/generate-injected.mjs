@@ -14,7 +14,7 @@ async function build() {
     bundle: true,
     outdir: path.join(ROOT, "dist", "playwright", "injected", "generated"),
     format: 'iife',
-    globalName: 'InjectedScriptModule',
+    globalName: 'injectedScriptModule',
     platform: 'browser',
   });
 
@@ -25,7 +25,18 @@ async function build() {
     bundle: true,
     outdir: path.join(ROOT, "dist", "playwright", "injected", "generated"),
     format: 'iife',
-    globalName: 'RecorderModule',
+    globalName: 'recorderModule',
+    platform: 'browser',
+  });
+
+  await esbuild.build({
+    entryPoints: [
+      path.join(ROOT, "src", "playwright", "injected", "src", "recorder", "oldRecorder.ts"),
+    ],
+    bundle: true,
+    outdir: path.join(ROOT, "dist", "playwright", "injected", "generated"),
+    format: 'iife',
+    globalName: 'recorderModule',
     platform: 'browser',
   });
 }
