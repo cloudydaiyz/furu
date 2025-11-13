@@ -1313,6 +1313,7 @@ class Overlay {
   }
 
   private _hideOverlay() {
+    // hide overlay here
     this._overlayElement.setAttribute('hidden', 'true');
   }
 

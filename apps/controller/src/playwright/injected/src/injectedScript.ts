@@ -1769,6 +1769,3 @@ function deepEquals(a: any, b: any): boolean {
 
   return false;
 }
-
-console.log("injected")
-console.log("injectedScript output", InjectedScript)

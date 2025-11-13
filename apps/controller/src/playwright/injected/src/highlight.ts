@@ -74,10 +74,12 @@ export class Highlight {
       const sheet = new this._injectedScript.window.CSSStyleSheet();
       sheet.replaceSync(highlightCSS);
       this._glassPaneShadow.adoptedStyleSheets.push(sheet);
+      console.log("highlight styles 1", sheet)
     } else {
       const styleElement = this._injectedScript.document.createElement('style');
       styleElement.textContent = highlightCSS;
       this._glassPaneShadow.appendChild(styleElement);
+      console.log("highlight styles 2")
     }
     this._glassPaneShadow.appendChild(this._actionPointElement);
   }
