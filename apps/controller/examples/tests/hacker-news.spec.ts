@@ -17,7 +17,7 @@ async function highlightLocators(locatorList: Locator[]) {
 }
 
 declare global {
-  interface Window { 
+  interface Window {
     validateMetric: (name: string, good: boolean) => void;
   }
 }
@@ -28,20 +28,20 @@ test.describe("HackerNews/newest", () => {
 
     let numArticlesSorted = 0;
     let prevTimestamp = Infinity;
-    while(numArticlesSorted < 100) {
+    while (numArticlesSorted < 100) {
       const rows = await page.locator("span[title]").all();
 
       for (let i = 0; i < 30 && numArticlesSorted < 100; i++) {
         const item = rows[i];
         const title = await item.getAttribute("title");
         const date = new Date(title!.split(" ")[0]).getTime();
-  
+
         expect(date).toBeLessThanOrEqual(prevTimestamp);
         prevTimestamp = date;
         numArticlesSorted++;
       }
-      
-      if(numArticlesSorted < 100) {
+
+      if (numArticlesSorted < 100) {
         await page.locator("a[rel=next]").click();
       }
     }
@@ -51,7 +51,7 @@ test.describe("HackerNews/newest", () => {
   test('should have good accessibility', async ({ page }) => {
     await injectAxe(page);
     await checkA11y(page);
-    
+
     // For more specificity:
     // const res = await getAxeResults(page);
     // assert(res.violations.length > 0, "Violations detected.");
@@ -70,7 +70,7 @@ test.describe("HackerNews/newest", () => {
     const badMetrics: string[] = [];
     function validateMetric(name: string, good: boolean) {
       console.log(`${name} valid: ${good}`);
-      if(!good) {
+      if (!good) {
         badMetrics.push(name);
       }
     }
@@ -102,7 +102,7 @@ test.describe("HackerNews/newest", () => {
           // See: https://github.com/GoogleChrome/web-vitals#:~:text=Note%20that%20some%20of%20these%20metrics%20will%20not%20report%20until%20the%20user%20has%20interacted%20with%20the%20page%2C%20switched%20tabs%2C%20or%20the%20page%20starts%20to%20unload.
           function checkMetric(m: webVitals.Metric) {
             console.trace(JSON.stringify(m, null, 4));
-            if(m.rating !== "good") {
+            if (m.rating !== "good") {
               window.validateMetric(m.name, false);
               return;
             }
@@ -111,7 +111,7 @@ test.describe("HackerNews/newest", () => {
 
           webVitals.onCLS(checkMetric);
           webVitals.onFCP(checkMetric);
-          webVitals.onFID(checkMetric); // NOTE: will be removed from library soon
+          // webVitals.onFID(checkMetric); // Removed from library
           webVitals.onINP(checkMetric);
           webVitals.onLCP(checkMetric);
           webVitals.onTTFB(checkMetric);

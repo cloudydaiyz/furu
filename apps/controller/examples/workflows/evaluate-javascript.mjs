@@ -2,6 +2,10 @@
 
 // @ts-check
 
+/**
+ * @import * as index from "./index"
+ */
+
 await page.goto('https://www.example.com/');
 const dimensions = await page.evaluate(() => {
   return {

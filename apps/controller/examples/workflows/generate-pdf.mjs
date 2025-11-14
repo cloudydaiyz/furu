@@ -2,5 +2,9 @@
 
 // @ts-check
 
+/**
+ * @import * as index from "./index"
+ */
+
 await page.goto('https://www.google.com/search?q=Google');
 await page.pdf({ path: `document.pdf` });

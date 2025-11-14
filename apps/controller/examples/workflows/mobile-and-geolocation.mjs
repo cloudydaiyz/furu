@@ -2,6 +2,10 @@
 
 // @ts-check
 
+/**
+ * @import * as index from "./index"
+ */
+
 // const { chromium, devices } = playwright;
 // const pixel5 = devices['Pixel 5'];
 // const browser = await chromium.launch();

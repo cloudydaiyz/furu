@@ -3,8 +3,14 @@
 // @ts-check
 
 /**
+ * @import * as index from "./index"
+ */
+
+/**
  * Helper function which will compare val1 with val2.
- * If they dont equal itself it will throw an error.
+ * If they aren't equal it will throw an error.
+ * @param {any} val1 
+ * @param {any} val2 
  */
 const expect = (val1, val2) => {
   if (val1 !== val2) {

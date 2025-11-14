@@ -2,6 +2,10 @@
 
 // @ts-check
 
+/**
+ * @import * as index from "./index"
+ */
+
 // Try to add 'playwright.firefox' to the list ↓
 // for (const browserType of [playwright.chromium, playwright.webkit]) {
 await page.goto('https://playwright.dev');

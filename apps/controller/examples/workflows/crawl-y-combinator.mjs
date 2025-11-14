@@ -2,6 +2,10 @@
 
 // @ts-check
 
+/**
+ * @import * as index from "./index"
+ */
+
 await page.goto('https://news.ycombinator.com');
 
 // Get all the entries on the page with a CSS selector in this case identified

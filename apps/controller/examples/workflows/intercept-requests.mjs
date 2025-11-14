@@ -2,6 +2,10 @@
 
 // @ts-check
 
+/**
+ * @import * as index from "./index"
+ */
+
 // Log and continue all network requests
 await page.route('**', (route, request) => {
   console.log(request.url());

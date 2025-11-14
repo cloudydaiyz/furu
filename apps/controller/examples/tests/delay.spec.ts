@@ -2,18 +2,18 @@
 // Helpful for measuring timeouts
 
 import { test } from '@playwright/test';
-import { delay } from '../src/util';
+import { delay } from '../../src/util';
 
 test('delay for 5 seconds', async ({ page }) => {
   const start = Date.now();
   await delay(5000);
   const delta = Date.now() - start;
-  console.log(`Delayed for ${delta}ms (${delta/1000} seconds)`);
+  console.log(`Delayed for ${delta}ms (${delta / 1000} seconds)`);
 });
 
 test('delay for another 5 seconds', async ({ page }) => {
   const start = Date.now();
   await delay(5000);
   const delta = Date.now() - start;
-  console.log(`Delayed for ${delta}ms (${delta/1000} seconds)`);
+  console.log(`Delayed for ${delta}ms (${delta / 1000} seconds)`);
 });

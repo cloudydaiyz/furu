@@ -2,6 +2,10 @@
 
 // @ts-check
 
+/**
+ * @import * as index from "./index"
+ */
+
 // const browser = await chromium.launch();
 // const context = await browser.newContext({
 //   recordVideo: {

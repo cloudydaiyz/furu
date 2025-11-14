@@ -2,6 +2,10 @@
 
 // @ts-check
 
+/**
+ * @import * as index from "./index"
+ */
+
 const IMAGE_URL = 'https://placehold.co/300x70?text=Yey+Playwright!';
 
 // const context = await browser.newContext({
