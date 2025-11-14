@@ -8,6 +8,8 @@ const ROOT = path.join(__dirname, '..');
 const injectedScriptPath = path.join(ROOT, "dist", "playwright", "injected", "generated", "injectedScript.js")
 const recorderPath = path.join(ROOT, "dist", "playwright", "injected", "generated", "recorder.js")
 
+const startMaximized = false;
+
 type Action = typeof actions[number];
 type ActionInput = {
   label: string;
@@ -139,8 +141,20 @@ async function initBrowserContext(browserContext: BrowserContext, scriptPaths: s
 
 async function launch() {
   // launch browser
-  const browser = await chromium.launch({ headless: false });
-  const context = await browser.newContext();
+  const args = startMaximized ? ["--start-maximized"] : [];
+  const browser = await chromium.launch({
+    headless: false,
+    // NOTE: The `--start-maximized` option only works for Chromium
+    args
+  });
+
+  // https://playwright.dev/docs/emulation#viewport
+  const context = await browser.newContext({
+    viewport: {
+      width: 1920,
+      height: 1080
+    }
+  });
 
   const scriptPaths = [injectedScriptPath, recorderPath];
   await initBrowserContext(context, scriptPaths);
