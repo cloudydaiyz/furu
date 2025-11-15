@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc && node scripts/generate-injected.mjs",
     "inspector": "node dist/demo/inspector.js",
-    "executor": "node dist/demo/executor.js"
+    "executor": "node --experimental-repl-await --experimental-vm-modules dist/demo/executor.js"
   },
   "keywords": [],
   "author": "",
