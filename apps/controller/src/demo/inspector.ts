@@ -1,8 +1,8 @@
 import { BrowserContext, chromium } from "@playwright/test";
 import path from "path";
 import fs from "fs/promises"
-import type { InjectedScript } from "./playwright/injected/src/injectedScript";
-import type { Recorder, RecorderDelegate } from "./playwright/injected/src/recorder/recorder";
+import type { InjectedScript } from "../playwright/injected/src/injectedScript";
+import type { Recorder, RecorderDelegate } from "../playwright/injected/src/recorder/recorder";
 
 const ROOT = path.join(__dirname, '..');
 const injectedScriptPath = path.join(ROOT, "dist", "playwright", "injected", "generated", "injectedScript.js")
