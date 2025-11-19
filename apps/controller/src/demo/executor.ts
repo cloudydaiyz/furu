@@ -1,11 +1,14 @@
+// Demonstrates implementing a simple dynamic code executor that supports
+// line-by-line execution and top level awaits
+
 import path from "path";
 import fs from "fs/promises";
-import fsCallback from "fs";
-import { PassThrough, Readable, ReadableOptions, Writable } from "stream";
-import repl from "repl";
+import { PassThrough, Readable, ReadableOptions } from "stream";
+import repl, { Recoverable } from "repl";
 import http from "http";
 import vm from "vm";
 import { chromium } from "@playwright/test";
+import { processTopLevelAwait } from '../vendor/node/await';
 
 import type { ArrowFunctionExpression, BlockStatement, CallExpression, ExpressionStatement, FunctionDeclaration, Statement } from "estree";
 // import esprima as "esprima" // doesn't work since esprima may not have a default export; stick to named export
@@ -25,6 +28,10 @@ async function parse() {
     const rawSource = await fs.readFile(sourcePath, "utf-8");
     source = [
       "async function workflow(page) {",
+      'const { chromium } = require("playwright")',
+      "const browser = await chromium.launch({ headless: false })",
+      "const context = await browser.newContext()",
+      "const page = await context.newPage()",
       rawSource,
       "}",
     ].join("\n");
@@ -39,10 +46,22 @@ async function parse() {
 
     const wrapper = sourceAst.body[0] as FunctionDeclaration;
     const workflowStatements = wrapper.body.body;
+
+    const processStatement = (statement: string) => processTopLevelAwait(statement) ?? statement;
+
+    const context = vm.createContext({ console, require });
     console.log('regenerated workflowStatements:');
     for (const [index, statement] of workflowStatements.entries()) {
-      console.log(`${index}: ${escodegen.generate(statement)}`);
+      const regenerated = escodegen.generate(statement);
+      console.log(`${index}: ${regenerated}`);
+
+      let processedStatement = processStatement(regenerated);
+      console.log(`${index} (processed): ${processedStatement}`);
+
+      await Promise.resolve(vm.runInContext(processedStatement, context));
     }
+    const closeStatement = processStatement("await browser.close()");
+    await Promise.resolve(vm.runInContext(closeStatement, context));
   } catch (e) {
     console.error(e);
     console.log(JSON.stringify(e, null, 2));
@@ -80,6 +99,7 @@ async function getPlaywrightContext() {
   const browser = await chromium.launch({ headless: false });
   const context = await browser.newContext();
   const page = await context.newPage();
+  await browser.close();
   return page;
 }
 
@@ -212,13 +232,15 @@ function createReplModuleEval(): repl.REPLEval {
 }
 
 /** https://github.com/nodejs/node/issues/29719 */
-const defaultReplEval = repl.start('$ ').eval;
+const getDefaultReplEval = () => repl.start('$ ').eval;
 
 /** 
  * Almost good, but the arguments for repl.REPLEval need to be passed in this function,
  * not just the server.
  */
 function createReplEval(server: repl.REPLServer, throwOnError = false): repl.REPLEval {
+  const defaultReplEval = getDefaultReplEval()
+
   return (cmd, context, filename, callback) => {
     // console.log([...cmd]);
     let result;
@@ -246,11 +268,12 @@ function replEval(
   callback: REPLEvalCallback,
   throwOnError?: boolean,
 ) {
+  const defaultReplEval = getDefaultReplEval()
   // console.log([...cmd]);
 
   const callbackWrapper: REPLEvalCallback = (err, result) => {
     console.log("cmd", cmd);
-    if (err) {
+    if (err && !(err instanceof Recoverable)) {
       console.log("Eval error", err);
     } else {
       console.log("Line successful");
@@ -321,25 +344,26 @@ async function launchParsedRepl() {
     const workflowStatements = (callee.body as BlockStatement).body;
 
     const readable = new Readable({ read: () => { } });
+    // const readable = Readable.from(workflowStatements);
 
     // const output = process.stdout;
     // const output = fsCallback.createWriteStream("null", { fd: 1 });
     const output = createStdoutProxy();
 
-    repl.start({
-      prompt: '$ ',
-      input: readable,
-      output,
-      terminal: false,
-      eval(cmd, context, filename, callback) {
-        return replEval(this, cmd, context, filename, callback);
-      }
-    });
+    // repl.start({
+    //   prompt: '$ ',
+    //   input: readable,
+    //   output,
+    //   terminal: false,
+    //   eval(cmd, context, filename, callback) {
+    //     return replEval(this, cmd, context, filename, callback);
+    //   }
+    // });
 
     for (const [index, statement] of workflowStatements.entries()) {
       const regenerated = `${escodegen.generate(statement)}`;
       console.log(`${index}: ${regenerated}`)
-      readable.push(regenerated);
+      // readable.push(regenerated);
     }
   } catch (e) {
     console.error('FATAL ERROR:');
@@ -353,8 +377,30 @@ async function launchParsedRepl() {
   }
 }
 
-// parse();
+async function runWithTopLevelAwait() {
+  const context = {
+    animal: 'cat',
+    count: 2,
+  };
+  const script = new vm.Script('count += 1; name = "kitty";');
+
+  vm.createContext(context);
+  for (let i = 0; i < 10; ++i) {
+    script.runInContext(context);
+  }
+  console.log(context);
+
+  const asyncScript = new vm.Script(`
+async function hello() {
+  console.log("world")    
+}
+await hello()`);
+  asyncScript.runInContext(context);
+}
+
+parse();
 // launchCurlRepl();
 // launchFileRepl();
 // launchRepl();
-launchParsedRepl();
+// launchParsedRepl();
+// runWithTopLevelAwait();

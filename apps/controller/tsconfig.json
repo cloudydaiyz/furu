@@ -14,7 +14,7 @@
     "baseUrl": ".",
     "esModuleInterop": true,
     "strict": true,
-    "allowJs": false,
+    "allowJs": true,
     "jsx": "react-jsx",
     "resolveJsonModule": true,
     // "noEmit": true,
@@ -25,7 +25,8 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
-    "src/**/*.d.ts"
+    "src/**/*.d.ts",
+    "src/vendor/node/await.js"
   ],
   "exclude": [
     "playwright.config.ts",

@@ -21,6 +21,8 @@
   },
   "dependencies": {
     "@playwright/test": "^1.56.1",
+    "acorn": "^8.15.0",
+    "acorn-walk": "^8.3.4",
     "axe-playwright": "^2.2.2",
     "escodegen": "^2.1.0",
     "esprima": "^4.0.1",
