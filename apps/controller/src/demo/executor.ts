@@ -14,9 +14,9 @@ import type { ArrowFunctionExpression, BlockStatement, CallExpression, Expressio
 // import esprima as "esprima" // doesn't work since esprima may not have a default export; stick to named export
 import * as esprima from "esprima";
 import escodegen from "escodegen";
-import { Console } from "console";
 
-const sourcePath = path.join("examples", "workflows", "evaluate-javascript.mjs");
+// const sourcePath = path.join("examples", "workflows", "evaluate-javascript.mjs");
+const sourcePath = path.join("examples", "workflows", "crawl-y-combinator.mjs");
 
 async function parse() {
   console.log('esprima:');

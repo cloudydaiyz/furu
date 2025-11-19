@@ -9,10 +9,10 @@ const ROOT = path.join(__dirname, '..');
 async function build() {
   await esbuild.build({
     entryPoints: [
-      path.join(ROOT, "src", "playwright", "injected", "src", "injectedScript.ts"),
+      path.join(ROOT, "src", "vendor", "playwright", "injected", "src", "injectedScript.ts"),
     ],
     bundle: true,
-    outdir: path.join(ROOT, "dist", "playwright", "injected", "generated"),
+    outdir: path.join(ROOT, "dist", "vendor", "playwright", "injected", "generated"),
     format: 'iife',
     globalName: 'injectedScriptModule',
     platform: 'browser',
@@ -20,10 +20,10 @@ async function build() {
 
   await esbuild.build({
     entryPoints: [
-      path.join(ROOT, "src", "playwright", "injected", "src", "recorder", "recorder.ts"),
+      path.join(ROOT, "src", "vendor", "playwright", "injected", "src", "recorder", "recorder.ts"),
     ],
     bundle: true,
-    outdir: path.join(ROOT, "dist", "playwright", "injected", "generated"),
+    outdir: path.join(ROOT, "dist", "vendor", "playwright", "injected", "generated"),
     format: 'iife',
     globalName: 'recorderModule',
     platform: 'browser',
@@ -31,10 +31,10 @@ async function build() {
 
   await esbuild.build({
     entryPoints: [
-      path.join(ROOT, "src", "playwright", "injected", "src", "recorder", "oldRecorder.ts"),
+      path.join(ROOT, "src", "vendor", "playwright", "injected", "src", "recorder", "oldRecorder.ts"),
     ],
     bundle: true,
-    outdir: path.join(ROOT, "dist", "playwright", "injected", "generated"),
+    outdir: path.join(ROOT, "vendor", "dist", "playwright", "injected", "generated"),
     format: 'iife',
     globalName: 'recorderModule',
     platform: 'browser',
