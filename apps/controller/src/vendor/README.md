@@ -1,4 +1,4 @@
-## Playwright Vendor
+## Vendor
 
 This directory contains modules sourced directly from the [Node.js](https://github.com/nodejs/node) and [Playwright](https://github.com/microsoft/playwright) projects. These files have been vendored to support local modifications and ensure compatibility with our custom runtime environment.
 
