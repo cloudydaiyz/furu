@@ -34,7 +34,7 @@ async function build() {
       path.join(ROOT, "src", "vendor", "playwright", "injected", "src", "recorder", "oldRecorder.ts"),
     ],
     bundle: true,
-    outdir: path.join(ROOT, "vendor", "dist", "playwright", "injected", "generated"),
+    outdir: path.join(ROOT, "dist", "vendor", "playwright", "injected", "generated"),
     format: 'iife',
     globalName: 'recorderModule',
     platform: 'browser',
