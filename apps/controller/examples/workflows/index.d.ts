@@ -1,4 +1,5 @@
 // Global context for all custom tests
+// https://github.com/microsoft/TypeScript/issues/15626
 
 import playwright from 'playwright';
 

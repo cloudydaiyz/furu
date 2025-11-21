@@ -4,8 +4,9 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc && node scripts/generate-injected.mjs",
-    "inspector": "node dist/demo/inspector.js",
-    "executor": "node --experimental-repl-await --experimental-vm-modules dist/demo/executor.js"
+    "inspector": "npm run build && node dist/sandbox/inspector.js",
+    "executor": "npm run build && node --experimental-repl-await --experimental-vm-modules dist/sandbox/executor.js",
+    "start": "npm run build && node dist/index.js"
   },
   "keywords": [],
   "author": "",

@@ -26,7 +26,8 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.d.ts",
-    "src/vendor/node/await.js"
+    "src/vendor/node/await.js",
+    "examples/workflows/index.d.ts"
   ],
   "exclude": [
     "playwright.config.ts",

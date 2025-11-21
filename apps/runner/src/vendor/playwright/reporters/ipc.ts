@@ -1,8 +1,6 @@
 /**
  * This file includes a variant of the JSONReporter class, adapted from the Playwright
- * source code. You can find the original implementation at:
- *
- * https://github.com/microsoft/playwright/blob/main/packages/playwright/src/reporters/json.ts
+ * source code. You can find the original implementation at `./json.ts`.
  *
  * Copyright (c) Microsoft Corporation.
  *
@@ -24,7 +22,7 @@ import path from "path";
 
 import { toPosixPath, MultiMap } from '../utils';
 
-import { formatError, nonTerminalScreen, prepareErrorStack, resolveOutputFile, CommonReporterOptions } from "./base";
+import { formatError, nonTerminalScreen, prepareErrorStack } from "./base";
 import { getProjectId } from "../common/config";
 
 import type {

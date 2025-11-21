@@ -15,8 +15,54 @@ import type { ArrowFunctionExpression, BlockStatement, CallExpression, Expressio
 import * as esprima from "esprima";
 import escodegen from "escodegen";
 
-// const sourcePath = path.join("examples", "workflows", "evaluate-javascript.mjs");
-const sourcePath = path.join("examples", "workflows", "crawl-y-combinator.mjs");
+/** Line numbers specifying the range of lines to execute, inclusive */
+interface ExecutionRange {
+  start: number;
+  end: number;
+}
+
+interface Command {
+  workflow: string;
+  executionRange?: ExecutionRange
+}
+
+interface WorkflowTemplate {
+  wrapper: string[];
+  workflowInsert: number;
+}
+
+interface WorkflowTemplateDisplacement {
+  startRange: number;
+  startLine: number;
+}
+
+const SETUP_SCRIPT = [
+  'const { chromium } = require("playwright");',
+  "const browser = await chromium.launch({ headless: false });",
+  "const context = await browser.newContext();",
+  "const page = await context.newPage();",
+].join('\n');
+
+const WORKFLOW_SCRIPT_TEMPLATE: WorkflowTemplate = {
+  wrapper: [
+    "async function workflow(page) {",
+    "}",
+  ],
+  workflowInsert: 1,
+}
+
+const WORKFLOW_TEST_TEMPLATE: WorkflowTemplate = {
+  wrapper: [
+    "import { test } from '@playwright/test';",
+    `test("workflow", async ({ page }) => {`,
+    "});",
+  ],
+  workflowInsert: 2,
+}
+
+const title = "todo-mvc";
+const sourcePath = path.join("examples", "workflows", `${title}.mjs`);
+const context = vm.createContext({ console, require });
 
 async function parse() {
   console.log('esprima:');
@@ -33,6 +79,7 @@ async function parse() {
       "const context = await browser.newContext()",
       "const page = await context.newPage()",
       rawSource,
+      "await browser.close()",
       "}",
     ].join("\n");
     console.log('source:');
@@ -60,8 +107,8 @@ async function parse() {
 
       await Promise.resolve(vm.runInContext(processedStatement, context));
     }
-    const closeStatement = processStatement("await browser.close()");
-    await Promise.resolve(vm.runInContext(closeStatement, context));
+    // const closeStatement = processStatement("await browser.close()");
+    // await Promise.resolve(vm.runInContext(closeStatement, context));
   } catch (e) {
     console.error(e);
     console.log(JSON.stringify(e, null, 2));
@@ -398,9 +445,120 @@ await hello()`);
   asyncScript.runInContext(context);
 }
 
-parse();
+function processStatement(statement: string) {
+  return processTopLevelAwait(statement) ?? statement
+}
+
+function getWorkflowStatements(ast: esprima.Program) {
+  const wrapper = ast.body[0] as FunctionDeclaration;
+  return wrapper.body.body;
+}
+
+function buildWorkflowTemplate(workflow: string, template: WorkflowTemplate) {
+  const script = template.wrapper.slice();
+  script.splice(template.workflowInsert, 0, workflow);
+  return script.join("\n");
+}
+
+function getWorkflowTemplateDisplacement(template: WorkflowTemplate): WorkflowTemplateDisplacement {
+  const startRange = template.wrapper.reduce((acc, line, i) => acc + line.length + 1, 0);
+  const startLine = template.workflowInsert;
+  return { startRange, startLine };
+}
+
+async function executeCommands(context: vm.Context, workflow: string, range?: ExecutionRange) {
+  let source: string | undefined = undefined;
+  try {
+    source = buildWorkflowTemplate(workflow, WORKFLOW_SCRIPT_TEMPLATE);
+    const sourceAst = esprima.parseModule(source, { loc: true, range: true });
+    const wrapper = sourceAst.body[0] as FunctionDeclaration;
+    const workflowStatements = wrapper.body.body;
+
+    let selectedStatements: Statement[];
+    if (range) {
+      const { start, end } = range;
+      selectedStatements = getStatementsWithinRange(workflow, start, end);
+    } else {
+      selectedStatements = workflowStatements;
+    }
+
+    for (const [index, statement] of workflowStatements.entries()) {
+      const regenerated = escodegen.generate(statement);
+      let processedStatement = processStatement(regenerated);
+      await Promise.resolve(vm.runInContext(processedStatement, context));
+    }
+  } catch (e) {
+    console.error(e);
+    if (source && typeof e.index === "number") {
+      console.log('--- error origin ---');
+      const stop = source.indexOf(" ", e.index);
+      console.log(source.substring(e.index, stop));
+    }
+  }
+}
+
+async function generateWorkflowFiles(title: string, workflow?: string) {
+  if (!workflow) {
+    workflow = await fs.readFile(sourcePath, "utf-8");
+    await fs.mkdir(`.hidden/workflow`, { recursive: true });
+    await fs.writeFile(`.hidden/workflow/${title}.mjs`, workflow);
+  }
+
+  const test = buildWorkflowTemplate(workflow, WORKFLOW_TEST_TEMPLATE);
+  await fs.mkdir(`.hidden/test`, { recursive: true });
+  await fs.writeFile(`.hidden/test/${title}.spec.ts`, test);
+
+  const script = buildWorkflowTemplate(workflow, WORKFLOW_SCRIPT_TEMPLATE);
+  await fs.mkdir(`.hidden/script`, { recursive: true });
+  await fs.writeFile(`.hidden/script/${title}.mjs`, script);
+
+  const sourceAst = esprima.parseModule(script, { loc: true, range: true });
+  await fs.mkdir(`.hidden/ast`, { recursive: true });
+  await fs.writeFile(`.hidden/ast/${title}.json`, JSON.stringify(sourceAst, null, 2));
+
+  const wrapper = sourceAst.body[0] as FunctionDeclaration;
+  const workflowStatements = wrapper.body.body;
+  return { workflow, sourceAst, workflowStatements }
+}
+
+function getStatementsWithinRange(workflow: string, startLine: number, endLine: number) {
+  const script = buildWorkflowTemplate(workflow, WORKFLOW_SCRIPT_TEMPLATE);
+  const sourceAst = esprima.parseModule(script, { loc: true, range: true });
+  const workflowStatements = getWorkflowStatements(sourceAst);
+
+  const withinRange: Statement[] = [];
+  const { startLine: startLineDisplacement } = getWorkflowTemplateDisplacement(WORKFLOW_SCRIPT_TEMPLATE);
+  for (const statement of workflowStatements) {
+    if (statement.loc
+      && statement.loc.start.line >= startLine + startLineDisplacement
+      && statement.loc.start.line <= endLine + startLineDisplacement
+    ) {
+      withinRange.push(statement);
+    }
+  }
+  return withinRange;
+}
+
+async function testGetStatementsWithinRange() {
+  const { workflow } = await generateWorkflowFiles(title);
+  const statements = getStatementsWithinRange(workflow, 15, 32);
+
+  for (const [index, statement] of statements.entries()) {
+    const regenerated = escodegen.generate(statement);
+    console.log(`${index}: ${regenerated}`);
+  }
+  console.log('displacement', getWorkflowTemplateDisplacement(WORKFLOW_SCRIPT_TEMPLATE));
+}
+
+// parse();
 // launchCurlRepl();
 // launchFileRepl();
 // launchRepl();
 // launchParsedRepl();
 // runWithTopLevelAwait();
+// testGetStatementsWithinRange()
+
+executeCommands(context, SETUP_SCRIPT)
+  .then(() => fs.readFile(sourcePath, "utf-8"))
+  .then(workflow => executeCommands(context, workflow, { start: 1, end: 43 }))
+  .finally(() => executeCommands(context, "await browser.close()"));
