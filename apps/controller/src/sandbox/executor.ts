@@ -21,11 +21,6 @@ interface ExecutionRange {
   end: number;
 }
 
-interface Command {
-  workflow: string;
-  executionRange?: ExecutionRange
-}
-
 interface WorkflowTemplate {
   wrapper: string[];
   workflowInsert: number;
@@ -121,15 +116,7 @@ async function parse() {
   }
 }
 
-/**
- * Gets statements within the default `workflow` function that have a block depth of 1
- * between the given start line and end line (inclusive).
- * 
- * If the range isn't provided, it checks the entire input.
- */
-async function getStatementsInRange(source: string, range?: [number, number]) {
-  // const [startLine, endLine] = range;
-}
+
 
 class StatementStream extends Readable {
   constructor(statements: Statement[], options?: ReadableOptions) {
@@ -521,6 +508,10 @@ async function generateWorkflowFiles(title: string, workflow?: string) {
   return { workflow, sourceAst, workflowStatements }
 }
 
+/**
+ * Gets the top-level statements within the given workflow
+ * between the given start line and end line (inclusive).
+ */
 function getStatementsWithinRange(workflow: string, startLine: number, endLine: number) {
   const script = buildWorkflowTemplate(workflow, WORKFLOW_SCRIPT_TEMPLATE);
   const sourceAst = esprima.parseModule(script, { loc: true, range: true });

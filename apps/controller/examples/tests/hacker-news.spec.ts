@@ -49,6 +49,7 @@ test.describe("HackerNews/newest", () => {
 
   // Uses https://www.npmjs.com/package/axe-playwright
   test('should have good accessibility', async ({ page }) => {
+    await page.goto("https://news.ycombinator.com/newest");
     await injectAxe(page);
     await checkA11y(page);
 
