@@ -4,7 +4,7 @@ import EventEmitter from "events";
 import { ClientOperation, ServerOperation } from "./types";
 
 export const BUFFER_DELIMITER = '\0\0\0';
-export const DELETE_THIS_ACCESS_KEY = "helloworld";
+export const ACCESS_KEY = process.env.ACCESS_KEY || "helloworld";
 export const defaultConsole = { ...console };
 
 export function setGlobalConsole(newConsole: Console) {
@@ -106,24 +106,10 @@ export class MessageBuffer {
       const slice = sliceUint8(this.buffered, i, i + this.delimiter.length);
       const delimiterFound = slice.every((v, i) => v === this.delimiter[i]);
       if (delimiterFound) {
-        // console.log(i, "capture delimiterFound");
-        // console.log(i, 'capture buffered', this.buffered.toString());
         const captured = sliceUint8(this.buffered, 0, i);
         this.buffered = sliceUint8(this.buffered, i + this.delimiter.length);
         return Buffer.from(captured).toString();
       }
-    }
-  }
-
-  async processData(
-    data: Buffer,
-    processData: (captured: string) => void | Promise<void>
-  ) {
-    this.append(data.toString());
-    let captured = this.capture();
-    while (captured) {
-      await processData(captured);
-      captured = this.capture();
     }
   }
 }

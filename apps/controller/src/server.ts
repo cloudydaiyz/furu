@@ -2,7 +2,7 @@ import net from "net";
 import vm from "vm";
 import { executeAllCommands, executeCommand, parseCommands, SETUP_SCRIPT } from "./execute";
 import { BlockExecutionStatus, ClientOperation, ExecutionStatus } from "./types";
-import { BUFFER_DELIMITER, DELETE_THIS_ACCESS_KEY, MessageBuffer, MessageSender, sendServerOperation } from "./utils";
+import { ACCESS_KEY, BUFFER_DELIMITER, MessageBuffer, MessageSender, sendServerOperation } from "./utils";
 import { Statement } from "estree";
 import escodegen from "escodegen";
 import { Browser, BrowserContext, chromium } from "playwright";
@@ -56,21 +56,16 @@ export function runOperationServer() {
 
     c.on("data", async (data) => {
       try {
-        // console.log('data string', data.toString());
         buffer.append(data.toString());
-
         let captured = buffer.capture();
-        // console.log("captured", captured);
-        // console.log('remaining', Buffer.from(buffer.buffered).toString());
 
         while (captured) {
           const operation = JSON.parse(captured) as ClientOperation;
           console.log(operation);
-          // console.log(JSON.stringify(operation, null, 2));
 
           switch (operation.opCode) {
             case 1:
-              if (operation.data.accessKey === DELETE_THIS_ACCESS_KEY) {
+              if (operation.data.accessKey === ACCESS_KEY) {
                 try {
                   authenticated = true;
 
@@ -210,6 +205,8 @@ export function runOperationServer() {
   operationServer.listen(OPERATION_SERVER_PORT, () => {
     console.log('server bound');
   });
+
+  process.send?.("ready");
 }
 
 export function runServer() {

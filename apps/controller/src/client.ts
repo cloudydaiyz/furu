@@ -3,13 +3,14 @@ import path from "path";
 import fs from "fs/promises";
 import { ClientOperation, ServerOperation } from "./types";
 import { OPERATION_SERVER_PORT } from "./server";
-import { sendClientOperation, DELETE_THIS_ACCESS_KEY, BUFFER_DELIMITER, MessageBuffer, MessageSender } from "./utils";
+import { BUFFER_DELIMITER, MessageBuffer, MessageSender, ACCESS_KEY } from "./utils";
+import { spawn } from "child_process";
 
 async function getSampleCommand() {
   // const title = "todo-mvc";
-  // const title = "hacker-news-sorted";
+  const title = "hacker-news-sorted";
   // const title = "hacker-news-cwv";
-  const title = "hacker-news-accessibility";
+  // const title = "hacker-news-accessibility";
   // const title = "crawl-y-combinator";
 
   const sourcePath = path.join("examples", "workflows", `${title}.mjs`);
@@ -25,36 +26,36 @@ async function getSampleCommand() {
 }
 
 function launchServer() {
-
+  const serverFile = path.join(path.dirname(__filename), "index.js");
+  const child = spawn(process.argv[0], [serverFile], {
+    env: { ACCESS_KEY },
+    stdio: ['inherit', 'inherit', 'inherit', 'ipc']
+  });
+  child.on('error', err => {
+    console.log(err);
+  });
+  return child;
 }
 
-function connectToServer(accessKey: string) {
-  let authenticated = false;
+function connectToServer(accessKey: string, host?: string) {
   let sender: MessageSender;
   const buffer = new MessageBuffer(BUFFER_DELIMITER);
 
   const serverSocket = net.createConnection(
-    { port: OPERATION_SERVER_PORT },
+    { port: OPERATION_SERVER_PORT, host },
     async () => {
       console.log('connected to server!');
 
       serverSocket.on('data', async (data) => {
-        // console.log('data string', data.toString());
         buffer.append(data.toString());
-
         let captured = buffer.capture();
-        // console.log("captured", captured);
-        // console.log('remaining', Buffer.from(buffer.buffered).toString());
 
         while (captured) {
           const operation = JSON.parse(captured) as ServerOperation;
           console.log(operation);
-          // console.log(JSON.stringify(operation, null, 2));
 
           switch (operation.opCode) {
             case 1:
-              authenticated = true;
-
               // For demo purposes
               const commandOperation = await getSampleCommand();
               sender.sendClientOperation(commandOperation);
@@ -81,7 +82,6 @@ function connectToServer(accessKey: string) {
           }
           captured = buffer.capture();
         }
-
       });
 
       serverSocket.on('end', () => {
@@ -95,8 +95,19 @@ function connectToServer(accessKey: string) {
     opCode: 1,
     data: { accessKey }
   });
+
+  return serverSocket;
 }
 
-export function runClient() {
-  connectToServer(DELETE_THIS_ACCESS_KEY);
+export function runClient(launchLocalServer?: boolean) {
+  if (launchLocalServer) {
+    const server = launchServer();
+    server.on('message', msg => {
+      if (msg === "ready") {
+        connectToServer(ACCESS_KEY);
+      }
+    })
+    return;
+  }
+  connectToServer(ACCESS_KEY);
 }
