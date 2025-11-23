@@ -4,7 +4,7 @@ import { processTopLevelAwait } from './vendor/node/await';
 import type { FunctionDeclaration, Statement } from "estree";
 import * as esprima from "esprima";
 import escodegen from "escodegen";
-import { WorkflowTemplate, WorkflowTemplateDisplacement, ExecutionRange } from "./types";
+import { WorkflowTemplate, WorkflowTemplateDisplacement } from "./types";
 
 export const SETUP_SCRIPT = [
   'const { chromium } = require("playwright");',
@@ -47,8 +47,8 @@ function buildWorkflowTemplate(workflow: string, template: WorkflowTemplate) {
   return script.join("\n");
 }
 
-function getWorkflowTemplateDisplacement(template: WorkflowTemplate): WorkflowTemplateDisplacement {
-  const startRange = template.wrapper.reduce((acc, line, i) => acc + line.length + 1, 0);
+export function getWorkflowTemplateDisplacement(template: WorkflowTemplate): WorkflowTemplateDisplacement {
+  const startRange = template.wrapper.reduce((acc, line) => acc + line.length + 1, 0);
   const startLine = template.workflowInsert;
   return { startRange, startLine };
 }
@@ -57,40 +57,53 @@ function getWorkflowTemplateDisplacement(template: WorkflowTemplate): WorkflowTe
  * Gets the top-level statements within the given workflow
  * between the given start line and end line (inclusive).
  */
-function getStatementsWithinRange(statements: Statement[], startLine: number, endLine: number) {
+function getStatementsWithinRange(statements: Statement[], startLine?: number, endLine?: number) {
   const withinRange: Statement[] = [];
-  const { startLine: startLineDisplacement } = getWorkflowTemplateDisplacement(WORKFLOW_SCRIPT_TEMPLATE);
+  const displacement = getWorkflowTemplateDisplacement(WORKFLOW_SCRIPT_TEMPLATE);
+  const { startLine: startLineDisplacement } = displacement;
   for (const statement of statements) {
     if (statement.loc
-      && statement.loc.start.line >= startLine + startLineDisplacement
-      && statement.loc.start.line <= endLine + startLineDisplacement
+      && (!startLine || statement.loc.start.line >= startLine + startLineDisplacement)
+      && (!endLine || statement.loc.start.line <= endLine + startLineDisplacement)
     ) {
       withinRange.push(statement);
     }
   }
-  return withinRange;
+
+  return {
+    statements: withinRange,
+    displacement,
+  };
 }
 
-export async function executeCommands(context: vm.Context, workflow: string, range?: ExecutionRange) {
-  try {
-    const source = buildWorkflowTemplate(workflow, WORKFLOW_SCRIPT_TEMPLATE);
-    const sourceAst = esprima.parseModule(source, { loc: true, range: true });
-    const workflowStatements = getWorkflowStatements(sourceAst);
+export function parseCommands(
+  workflow: string,
+  startLine?: number,
+  endLine?: number
+) {
+  const source = buildWorkflowTemplate(workflow, WORKFLOW_SCRIPT_TEMPLATE);
+  const sourceAst = esprima.parseModule(source, { loc: true, range: true });
+  const workflowStatements = getWorkflowStatements(sourceAst);
+  return getStatementsWithinRange(workflowStatements, startLine, endLine);
+}
 
-    let selectedStatements: Statement[];
-    if (range) {
-      const { start, end } = range;
-      selectedStatements = getStatementsWithinRange(workflowStatements, start, end);
-    } else {
-      selectedStatements = workflowStatements;
-    }
+export async function executeCommand(
+  context: vm.Context,
+  statement: Statement
+) {
+  const regenerated = escodegen.generate(statement);
+  const processedStatement = processStatement(regenerated);
+  await Promise.resolve(vm.runInContext(processedStatement, context));
+}
 
-    for (const [index, statement] of selectedStatements.entries()) {
-      const regenerated = escodegen.generate(statement);
-      const processedStatement = processStatement(regenerated);
-      await Promise.resolve(vm.runInContext(processedStatement, context));
-    }
-  } catch (e) {
-    console.error(e);
+export async function executeAllCommands(
+  context: vm.Context,
+  workflow: string,
+  startLine?: number,
+  endLine?: number,
+) {
+  const { statements } = parseCommands(workflow, startLine, endLine);
+  for (const [index, statement] of statements.entries()) {
+    await executeCommand(context, statement);
   }
 }

@@ -1,3 +1,5 @@
+import { Console } from "console";
+
 export interface WorkflowTemplate {
   wrapper: string[];
   workflowInsert: number;
@@ -8,33 +10,53 @@ export interface WorkflowTemplateDisplacement {
   startLine: number;
 }
 
-/** Line numbers specifying the range of lines to execute, inclusive */
-export interface ExecutionRange {
-  start: number;
-  end: number;
+export type LineExecutionStatus = "pending" | "success" | "error";
+
+export type BlockExecutionStatus = {
+  [line: `${number}`]: LineExecutionStatus;
 }
 
-export interface Command {
-  workflow: string;
-  executionRange?: ExecutionRange;
-}
+export type ExecutionStatus = "running" | "stopped" | "success" | "error";
 
 export type ServerOperation = {
   opCode: 1;
-  data: {
-    sessionId: string;
-  }
+  data: "authenticated";
 } | {
   opCode: 2;
-  data: "finished";
+  data: {
+    error: "auth-error" | "auth-invalid"
+  }
+} | {
+  opCode: 3;
+  data: {
+    lines: BlockExecutionStatus,
+    status: ExecutionStatus;
+  }
+} | {
+  opCode: 4;
+  data: {
+    timestamp: number;
+    origin: string;
+    severity: number;
+    message: string;
+  }
 }
 
 export type ClientOperation = {
   opCode: 1;
-  data: Command;
+  data: {
+    accessKey: string;
+  }
 } | {
   opCode: 2;
   data: {
-    sessionId: string;
-  }
+    workflow: string;
+    range?: {
+      start?: number;
+      end?: number;
+    };
+  };
+} | {
+  opCode: 3;
+  data: "stop";
 };
