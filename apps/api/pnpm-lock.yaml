@@ -4,10 +4,17 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  controller: link:../../../../../../Library/pnpm/global/5/node_modules/@cloudydaiyz/controller
+  '@cloudydaiyz/controller': link:../../packages/controller
+
 importers:
 
   .:
     dependencies:
+      '@cloudydaiyz/controller':
+        specifier: link:../../packages/controller
+        version: link:../../packages/controller
       bullmq:
         specifier: ^5.63.0
         version: 5.63.0

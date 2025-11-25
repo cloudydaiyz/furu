@@ -42,7 +42,7 @@ export class ServerConsole extends Console {
   }
 }
 
-export function runOperationServer() {
+export function runOperationServer(accessKey = ACCESS_KEY) {
   const operationServer = net.createServer(async (c) => {
     console.log(`client connected`, c.address());
     const sender: MessageSender = new MessageSender(c, BUFFER_DELIMITER);
@@ -65,7 +65,7 @@ export function runOperationServer() {
 
           switch (operation.opCode) {
             case 1:
-              if (operation.data.accessKey === ACCESS_KEY) {
+              if (operation.data.accessKey === accessKey) {
                 try {
                   authenticated = true;
 
@@ -209,6 +209,6 @@ export function runOperationServer() {
   process.send?.("ready");
 }
 
-export function runServer() {
-  runOperationServer();
+export function runServer(accessKey?: string) {
+  runOperationServer(accessKey);
 }

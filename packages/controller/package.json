@@ -1,12 +1,12 @@
 {
-  "name": "controller",
+  "name": "@cloudydaiyz/controller",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
     "build": "tsc && node scripts/generate-injected.mjs",
     "inspector": "npm run build && node dist/sandbox/inspector.js",
     "executor": "npm run build && node --experimental-repl-await --experimental-vm-modules dist/sandbox/executor.js",
-    "start": "npm run build && node dist/index.js"
+    "start": "npm run build && node dist/start.js"
   },
   "keywords": [],
   "author": "",
@@ -30,5 +30,11 @@
     "playwright": "^1.56.1",
     "web-vitals": "^5.1.0",
     "yaml": "^2.8.1"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   }
 }

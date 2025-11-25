@@ -13,6 +13,7 @@
   "description": "",
   "repository": "https://github.com/cloudydaiyz/furu",
   "dependencies": {
+    "@cloudydaiyz/controller": "link:../../packages/controller",
     "bullmq": "^5.63.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

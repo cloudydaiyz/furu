@@ -1,4 +1,5 @@
-import { Console } from "console";
+import net from "net";
+import { MessageSender } from "./utils";
 
 export interface WorkflowTemplate {
   wrapper: string[];
@@ -60,3 +61,8 @@ export type ClientOperation = {
   opCode: 3;
   data: "stop";
 };
+
+export type SocketConnection = {
+  socket: net.Socket,
+  sender: MessageSender,
+}

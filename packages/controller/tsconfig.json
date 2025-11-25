@@ -21,6 +21,7 @@
     "noImplicitOverride": true,
     "useUnknownInCatchVariables": false,
     "skipLibCheck": true,
+    "declaration": true,
   },
   "include": [
     "src/**/*.ts",

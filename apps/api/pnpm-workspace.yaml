@@ -1,0 +1,3 @@
+overrides:
+  controller: link:../../../../../../Library/pnpm/global/5/node_modules/@cloudydaiyz/controller
+  '@cloudydaiyz/controller': link:../../packages/controller

@@ -1,19 +1,21 @@
 import net from "net";
 import path from "path";
 import fs from "fs/promises";
-import { ClientOperation, ServerOperation } from "./types";
+import { ClientOperation, ServerOperation, SocketConnection } from "./types";
 import { OPERATION_SERVER_PORT } from "./server";
 import { BUFFER_DELIMITER, MessageBuffer, MessageSender, ACCESS_KEY } from "./utils";
 import { spawn } from "child_process";
 
-async function getSampleCommand() {
-  // const title = "todo-mvc";
-  const title = "hacker-news-sorted";
+const dirname = path.dirname(__filename);
+
+export async function getSampleCommand() {
+  const title = "todo-mvc";
+  // const title = "hacker-news-sorted";
   // const title = "hacker-news-cwv";
   // const title = "hacker-news-accessibility";
   // const title = "crawl-y-combinator";
 
-  const sourcePath = path.join("examples", "workflows", `${title}.mjs`);
+  const sourcePath = path.join(dirname, "..", "examples", "workflows", `${title}.mjs`);
   const workflow = await fs.readFile(sourcePath, "utf-8");
   const operation: ClientOperation = {
     opCode: 2,
@@ -25,19 +27,26 @@ async function getSampleCommand() {
   return operation;
 }
 
-function launchServer() {
-  const serverFile = path.join(path.dirname(__filename), "index.js");
+export function launchServer(accessKey = ACCESS_KEY) {
+  const serverFile = path.join(dirname, "start.js");
+  console.log(serverFile);
   const child = spawn(process.argv[0], [serverFile], {
-    env: { ACCESS_KEY },
+    env: { ACCESS_KEY: accessKey },
     stdio: ['inherit', 'inherit', 'inherit', 'ipc']
   });
+  process.on("exit", () => {
+    console.log('error');
+    child.kill();
+  });
   child.on('error', err => {
+    console.log('error');
     console.log(err);
+    throw err;
   });
   return child;
 }
 
-function connectToServer(accessKey: string, host?: string) {
+function connectToServer(accessKey: string, host?: string): SocketConnection {
   let sender: MessageSender;
   const buffer = new MessageBuffer(BUFFER_DELIMITER);
 
@@ -93,21 +102,22 @@ function connectToServer(accessKey: string, host?: string) {
   sender = new MessageSender(serverSocket, BUFFER_DELIMITER);
   sender.sendClientOperation({
     opCode: 1,
-    data: { accessKey }
+    data: { accessKey: ACCESS_KEY }
   });
-
-  return serverSocket;
+  return { socket: serverSocket, sender };
 }
 
-export function runClient(launchLocalServer?: boolean) {
+export async function runClient(accessKey = ACCESS_KEY, launchLocalServer?: boolean) {
   if (launchLocalServer) {
-    const server = launchServer();
-    server.on('message', msg => {
-      if (msg === "ready") {
-        connectToServer(ACCESS_KEY);
-      }
-    })
-    return;
+    const socket = await new Promise<SocketConnection>((res) => {
+      const server = launchServer(accessKey);
+      server.on('message', msg => {
+        if (msg === "ready") {
+          res(connectToServer(accessKey));
+        }
+      });
+    });
+    return socket;
   }
-  connectToServer(ACCESS_KEY);
+  return connectToServer(accessKey);
 }
