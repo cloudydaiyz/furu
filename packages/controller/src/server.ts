@@ -8,6 +8,7 @@ import escodegen from "escodegen";
 import { Browser, BrowserContext, chromium } from "playwright";
 import { Console } from "console";
 import util from "util";
+import { BrowserContextInspector } from "./inspector";
 
 export const OPERATION_SERVER_PORT = 8124;
 
@@ -53,6 +54,7 @@ export function runOperationServer(accessKey = ACCESS_KEY) {
     let browser: Browser | undefined = undefined;
     let browserContext: BrowserContext | undefined = undefined;
     let context: vm.Context | undefined = undefined;
+    let inspector: BrowserContextInspector | undefined = undefined;
 
     c.on("data", async (data) => {
       try {
@@ -71,11 +73,6 @@ export function runOperationServer(accessKey = ACCESS_KEY) {
 
                   browser = await chromium.launch({ headless: false });
                   browserContext = await browser.newContext();
-                  context = vm.createContext({
-                    require,
-                    fetch,
-                    context: browserContext,
-                  });
 
                   browserContext.on('console', (consoleMessage) => {
                     const message = consoleMessage.text();
@@ -92,8 +89,23 @@ export function runOperationServer(accessKey = ACCESS_KEY) {
                         message,
                       }
                     });
-                  })
+                  });
 
+                  inspector = await BrowserContextInspector.create(
+                    browserContext,
+                    (opts) => console.log(opts),
+                  )
+                  // inspector.setInspecting(true);
+
+                  const page = await browserContext.newPage();
+
+                  context = vm.createContext({
+                    require,
+                    fetch,
+                    browser,
+                    context: browserContext,
+                    page,
+                  });
                   await executeAllCommands(context, SETUP_SCRIPT);
 
                   sender.sendServerOperation({
@@ -101,6 +113,7 @@ export function runOperationServer(accessKey = ACCESS_KEY) {
                     data: "authenticated"
                   });
                 } catch (error) {
+                  console.log(error);
                   sender.sendServerOperation({
                     opCode: 2,
                     data: {
@@ -163,6 +176,7 @@ export function runOperationServer(accessKey = ACCESS_KEY) {
 
                   if (index === statements.length - 1) {
                     executionStatus = "success";
+                    inspector?.setInspecting(true);
                     sendStatus();
                   }
                 } catch (error) {

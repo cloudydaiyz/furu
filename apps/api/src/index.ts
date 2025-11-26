@@ -1,12 +1,11 @@
 import 'dotenv/config'
-console.log(process.env.HELLO)
 
 import express from "express";
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { addJobs } from "./redis.js";
-import { runServer, runClient, getSampleCommand, launchServer, type SocketConnection } from '@cloudydaiyz/controller';
+import { runServer, runClient, getSampleCommand, launchServer, type SocketConnection } from '@cloudydaiyz/furu-controller';
 
 const port = 4000;
 const accessKey = "helloworld";

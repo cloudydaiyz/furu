@@ -7,12 +7,12 @@ import escodegen from "escodegen";
 import { WorkflowTemplate, WorkflowTemplateDisplacement } from "./types";
 
 export const SETUP_SCRIPT = [
-  'const { chromium } = require("playwright");',
+  // 'const { chromium } = require("playwright");',
   'const { test, expect, Locator } = require("@playwright/test");',
   'const { injectAxe, checkA11y, getAxeResults } = require("axe-playwright")',
-  "const browser = await chromium.launch({ headless: false });",
-  "const context = await browser.newContext();",
-  "const page = await context.newPage();",
+  // "const browser = await chromium.launch({ headless: false });",
+  // "const context = await browser.newContext();",
+  // "const page = await context.newPage();",
 ].join('\n');
 
 export const WORKFLOW_SCRIPT_TEMPLATE: WorkflowTemplate = {

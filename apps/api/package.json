@@ -1,6 +1,7 @@
 {
-  "name": "api",
-  "version": "1.0.0",
+  "name": "@cloudydaiyz/furu-app-api",
+  "private": true,
+  "version": "0.0.0",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -13,7 +14,7 @@
   "description": "",
   "repository": "https://github.com/cloudydaiyz/furu",
   "dependencies": {
-    "@cloudydaiyz/controller": "link:../../packages/controller",
+    "@cloudydaiyz/furu-controller": "link:../../packages/controller",
     "bullmq": "^5.63.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

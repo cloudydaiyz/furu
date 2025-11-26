@@ -6,7 +6,7 @@ import { OPERATION_SERVER_PORT } from "./server";
 import { BUFFER_DELIMITER, MessageBuffer, MessageSender, ACCESS_KEY } from "./utils";
 import { spawn } from "child_process";
 
-const dirname = path.dirname(__filename);
+// const dirname = path.dirname(__filename);
 
 export async function getSampleCommand() {
   const title = "todo-mvc";
@@ -15,7 +15,7 @@ export async function getSampleCommand() {
   // const title = "hacker-news-accessibility";
   // const title = "crawl-y-combinator";
 
-  const sourcePath = path.join(dirname, "..", "examples", "workflows", `${title}.mjs`);
+  const sourcePath = path.join(__dirname, "..", "examples", "workflows", `${title}.mjs`);
   const workflow = await fs.readFile(sourcePath, "utf-8");
   const operation: ClientOperation = {
     opCode: 2,
@@ -28,8 +28,9 @@ export async function getSampleCommand() {
 }
 
 export function launchServer(accessKey = ACCESS_KEY) {
-  const serverFile = path.join(dirname, "start.js");
+  const serverFile = path.join(__dirname, "start.js");
   console.log(serverFile);
+
   const child = spawn(process.argv[0], [serverFile], {
     env: { ACCESS_KEY: accessKey },
     stdio: ['inherit', 'inherit', 'inherit', 'ipc']
@@ -81,7 +82,7 @@ function connectToServer(accessKey: string, host?: string): SocketConnection {
               break;
             case 3:
               if (operation.data.status !== "running") {
-                serverSocket.end();
+                // serverSocket.end();
               }
               break;
             case 4:

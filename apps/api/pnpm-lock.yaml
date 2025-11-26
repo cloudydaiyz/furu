@@ -7,12 +7,13 @@ settings:
 overrides:
   controller: link:../../../../../../Library/pnpm/global/5/node_modules/@cloudydaiyz/controller
   '@cloudydaiyz/controller': link:../../packages/controller
+  '@cloudydaiyz/furu-controller': link:../../packages/controller
 
 importers:
 
   .:
     dependencies:
-      '@cloudydaiyz/controller':
+      '@cloudydaiyz/furu-controller':
         specifier: link:../../packages/controller
         version: link:../../packages/controller
       bullmq:
