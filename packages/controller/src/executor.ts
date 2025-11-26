@@ -8,6 +8,12 @@ import { WorkflowTemplate, WorkflowTemplateDisplacement } from "./types";
 
 export const SETUP_SCRIPT = [
   // 'const { chromium } = require("playwright");',
+  // "if(globalThis.DESTROY) { console.log('DESTROY detected'); process.exit(0) }",
+  // "const err = new Error('SETUP_SCRIPT error'); globalThis.err = err; throw err;",
+  "console.log('aborter', aborter);",
+  "aborter.signal.addEventListener('abort', () => { console.log('abort event'); throw new Error('Custom abort') })",
+  "aborter.abort('idk');",
+  // "const err = new SyntaxError('SETUP_SCRIPT error'); globalThis.err = err; globalThis._aborted = true; throw err;",
   'const { test, expect, Locator } = require("@playwright/test");',
   'const { injectAxe, checkA11y, getAxeResults } = require("axe-playwright")',
   // "const browser = await chromium.launch({ headless: false });",
@@ -89,21 +95,48 @@ export function parseCommands(
 
 export async function executeCommand(
   context: vm.Context,
-  statement: Statement
+  statement: Statement,
+  aborter: AbortController,
 ) {
   const regenerated = escodegen.generate(statement);
-  const processedStatement = processStatement(regenerated);
-  await Promise.resolve(vm.runInContext(processedStatement, context));
+  const protectedStatement = `
+  await new Promise((res, rej) => {
+  const throwOnAbort = () => { 
+    console.log('abort event'); 
+    rej('Custom abort');
+  };
+  aborter.signal.addEventListener('abort', throwOnAbort);
+  ${regenerated}
+  aborter.signal.removeEventListener('abort', throwOnAbort);
+  res();
+});
+`
+  const processedStatement = processStatement(protectedStatement);
+  console.log('processedStatement', processedStatement);
+
+  try {
+    await Promise.resolve(
+      vm.runInContext(processedStatement, context, { breakOnSigint: true })
+    );
+    console.log("aborter.signal.aborted", aborter.signal.aborted);
+  } catch (err) {
+    console.log("(in err) aborter.signal.aborted", aborter.signal.aborted);
+    console.log('executeCommand err', err instanceof SyntaxError, err);
+    console.log('context err', context.err instanceof SyntaxError, context.err);
+    console.log('context aborted', context._aborted);
+  }
 }
 
 export async function executeAllCommands(
   context: vm.Context,
   workflow: string,
+  aborter: AbortController,
   startLine?: number,
   endLine?: number,
 ) {
+  console.log('executeAllCommands');
   const { statements } = parseCommands(workflow, startLine, endLine);
   for (const [index, statement] of statements.entries()) {
-    await executeCommand(context, statement);
+    await executeCommand(context, statement, aborter);
   }
 }

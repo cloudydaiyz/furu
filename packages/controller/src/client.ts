@@ -4,9 +4,10 @@ import fs from "fs/promises";
 import { ClientOperation, ServerOperation, SocketConnection } from "./types";
 import { OPERATION_SERVER_PORT } from "./server";
 import { BUFFER_DELIMITER, MessageBuffer, MessageSender, ACCESS_KEY } from "./utils";
-import { spawn } from "child_process";
+import { fork, spawn } from "child_process";
 
 // const dirname = path.dirname(__filename);
+const MAX_AUTH_RETRIES = 0;
 
 export async function getSampleCommand() {
   const title = "todo-mvc";
@@ -71,14 +72,14 @@ function connectToServer(accessKey: string, host?: string): SocketConnection {
 
           switch (operation.opCode) {
             case 1:
-              const commandOperation = await getSampleCommand();
-              commandOperation.data.resetContext = true;
-              sender.sendClientOperation(commandOperation);
+              // const commandOperation = await getSampleCommand();
+              // commandOperation.data.resetContext = true;
+              // sender.sendClientOperation(commandOperation);
               break;
             case 2:
               if ((operation.data.error === "auth-error"
                 || operation.data.error === "unauthenticated")
-                && authRetries < 3
+                && authRetries < MAX_AUTH_RETRIES
               ) {
                 sender.sendClientOperation({
                   opCode: 1,

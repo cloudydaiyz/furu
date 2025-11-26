@@ -10,7 +10,7 @@ import { BrowserContextInspector } from "./inspector";
 
 export const OPERATION_SERVER_PORT = 8124;
 
-interface OperationServerParams {
+interface OperationServerContext {
   sender: MessageSender;
   logger: ServerConsole;
   browser: Browser;
@@ -29,15 +29,6 @@ export function runServer(accessKey = ACCESS_KEY) {
     let service: ServerOperationService | undefined = undefined;
     let authenticated = false;
 
-    const unauthenticated = () => {
-      sender.sendServerOperation({
-        opCode: 2,
-        data: {
-          error: "unauthenticated"
-        }
-      });
-    }
-
     connection.on("data", async (data) => {
       try {
         buffer.append(data.toString());
@@ -47,55 +38,60 @@ export function runServer(accessKey = ACCESS_KEY) {
           const operation = JSON.parse(captured) as ClientOperation;
           console.log(operation);
 
-          switch (operation.opCode) {
-            case 1:
-              if (operation.data.accessKey === accessKey) {
-                try {
-                  service = await ServerOperationService.create(sender, buffer);
-                  authenticated = true;
-                  sender.sendServerOperation({
-                    opCode: 1,
-                    data: "authenticated"
-                  });
-                } catch (error) {
-                  console.log(error);
+          if (operation.opCode !== 1 && !authenticated) {
+            sender.sendServerOperation({
+              opCode: 2,
+              data: {
+                error: "unauthenticated"
+              }
+            });
+          } else {
+            switch (operation.opCode) {
+              case 1:
+                if (operation.data.accessKey === accessKey) {
+                  try {
+                    service = await ServerOperationService.create(sender);
+
+                    authenticated = true;
+                    sender.sendServerOperation({
+                      opCode: 1,
+                      data: "authenticated"
+                    });
+                  } catch (error) {
+                    console.log(error);
+                    sender.sendServerOperation({
+                      opCode: 2,
+                      data: {
+                        error: "auth-error"
+                      }
+                    });
+                  }
+                } else {
                   sender.sendServerOperation({
                     opCode: 2,
                     data: {
-                      error: "auth-error"
+                      error: "auth-invalid"
                     }
                   });
                 }
-              } else {
-                sender.sendServerOperation({
-                  opCode: 2,
-                  data: {
-                    error: "auth-invalid"
-                  }
-                });
-              }
-              break;
-            case 2:
-              if (!authenticated) return unauthenticated();
-              service?.executeWorkflow(
-                operation.data.workflow,
-                operation.data.range,
-                operation.data.resetContext
-              );
-            case 3:
-              if (!authenticated) return unauthenticated();
-              break;
-            case 4:
-              if (!authenticated) return unauthenticated();
-              service?.setInspecting(operation.data.inspect);
-              break;
-            case 5:
-              if (!authenticated) return unauthenticated();
-              service?.resetContext();
-              break;
-            default:
-              if (!authenticated) return unauthenticated();
-              break;
+                break;
+              case 2:
+                service?.executeWorkflow(
+                  operation.data.workflow,
+                  operation.data.range,
+                  operation.data.resetContext
+                );
+              case 3:
+                break;
+              case 4:
+                service?.setInspecting(operation.data.inspect);
+                break;
+              case 5:
+                service?.resetContext();
+                break;
+              default:
+                break;
+            }
           }
           captured = buffer.capture();
         }
@@ -136,11 +132,11 @@ class ServerOperationService {
   private executionContext!: vm.Context;
   private inspector!: BrowserContextInspector;
 
-  private constructor(params: OperationServerParams) {
+  private constructor(params: OperationServerContext) {
     Object.assign(this, params);
   }
 
-  static async create(sender: MessageSender, buffer: MessageBuffer) {
+  static async create(sender: MessageSender) {
     const logger = new ServerConsole(sender);
 
     let browser: Browser;
@@ -185,12 +181,22 @@ class ServerOperationService {
       fetch,
       browser,
       context: browserContext,
+      console,
       page,
+      DESTROY: true,
     });
 
-    await executeAllCommands(executionContext, SETUP_SCRIPT);
+    const aborter = new AbortController();
+    executionContext.aborter = aborter;
+    let aborted = false;
+    aborter.signal.addEventListener("abort", () => {
+      console.log('top-level abort event');
+      aborted = true;
+      throw new Error('top-level abort');
+    });
+    await executeAllCommands(executionContext, SETUP_SCRIPT, aborter);
 
-    const params: OperationServerParams = {
+    const serverContext: OperationServerContext = {
       sender,
       logger,
       browser,
@@ -198,7 +204,7 @@ class ServerOperationService {
       executionContext,
       inspector,
     }
-    return new ServerOperationService(params);
+    return new ServerOperationService(serverContext);
   }
 
   resetContext() {
@@ -252,8 +258,13 @@ class ServerOperationService {
           ? `${startLine} - ${endLine}`
           : `${startLine}`
 
+
         this.logger.log(`${lineLabel}: ${escodegen.generate(statement)}`);
-        await executeCommand(this.executionContext, statement);
+
+        const aborter = new AbortController();
+        this.executionContext.aborter = aborter;
+
+        await executeCommand(this.executionContext, statement, aborter);
         for (let i = startLine; i <= endLine; i++) {
           if (i !== endLine || nextStartLine !== endLine) {
             blockStatus[`${i}`] = "success";
@@ -279,6 +290,8 @@ class ServerOperationService {
   }
 
   close() {
-    return executeAllCommands(this.executionContext, "await browser.close()");
+    const aborter = new AbortController();
+    this.executionContext.aborter = aborter;
+    return executeAllCommands(this.executionContext, "await browser.close()", aborter);
   }
 }
