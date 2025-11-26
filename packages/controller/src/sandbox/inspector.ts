@@ -23,7 +23,6 @@ type ActionInput = {
 type ActionMap = Record<Action, ActionInput>;
 
 type SelectedElementOptions = {
-  actions: readonly Action[],
   locators: string[],
   ariaSnapshot: string,
 }

@@ -27,7 +27,7 @@ export async function getSampleCommand() {
   return operation;
 }
 
-export function launchServer(accessKey = ACCESS_KEY) {
+export function launchLocalServer(accessKey = ACCESS_KEY) {
   const serverFile = path.join(__dirname, "start.js");
   console.log(serverFile);
 
@@ -35,26 +35,31 @@ export function launchServer(accessKey = ACCESS_KEY) {
     env: { ACCESS_KEY: accessKey },
     stdio: ['inherit', 'inherit', 'inherit', 'ipc']
   });
+
   process.on("exit", () => {
     console.log('error');
     child.kill();
   });
+
   child.on('error', err => {
     console.log('error');
     console.log(err);
     throw err;
   });
+
   return child;
 }
 
 function connectToServer(accessKey: string, host?: string): SocketConnection {
   let sender: MessageSender;
-  const buffer = new MessageBuffer(BUFFER_DELIMITER);
 
   const serverSocket = net.createConnection(
     { port: OPERATION_SERVER_PORT, host },
     async () => {
       console.log('connected to server!');
+
+      const buffer = new MessageBuffer(BUFFER_DELIMITER);
+      let authRetries = 0;
 
       serverSocket.on('data', async (data) => {
         buffer.append(data.toString());
@@ -66,16 +71,20 @@ function connectToServer(accessKey: string, host?: string): SocketConnection {
 
           switch (operation.opCode) {
             case 1:
-              // For demo purposes
               const commandOperation = await getSampleCommand();
+              commandOperation.data.resetContext = true;
               sender.sendClientOperation(commandOperation);
               break;
             case 2:
-              if (operation.data.error === "auth-error") {
+              if ((operation.data.error === "auth-error"
+                || operation.data.error === "unauthenticated")
+                && authRetries < 3
+              ) {
                 sender.sendClientOperation({
                   opCode: 1,
                   data: { accessKey }
                 });
+                authRetries++;
               } else {
                 serverSocket.end();
               }
@@ -83,9 +92,20 @@ function connectToServer(accessKey: string, host?: string): SocketConnection {
             case 3:
               if (operation.data.status !== "running") {
                 // serverSocket.end();
+                sender.sendClientOperation({
+                  opCode: 4,
+                  data: {
+                    inspect: true,
+                  }
+                });
               }
               break;
             case 4:
+              break;
+            case 5:
+              console.log("selectedElement", operation.data);
+              break;
+            case 6:
               break;
             default:
               break;
@@ -105,13 +125,14 @@ function connectToServer(accessKey: string, host?: string): SocketConnection {
     opCode: 1,
     data: { accessKey: ACCESS_KEY }
   });
+
   return { socket: serverSocket, sender };
 }
 
-export async function runClient(accessKey = ACCESS_KEY, launchLocalServer?: boolean) {
-  if (launchLocalServer) {
+export async function runClient(accessKey = ACCESS_KEY, launchServer?: boolean) {
+  if (launchServer) {
     const socket = await new Promise<SocketConnection>((res) => {
-      const server = launchServer(accessKey);
+      const server = launchLocalServer(accessKey);
       server.on('message', msg => {
         if (msg === "ready") {
           res(connectToServer(accessKey));

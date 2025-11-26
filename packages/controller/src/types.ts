@@ -19,13 +19,23 @@ export type BlockExecutionStatus = {
 
 export type ExecutionStatus = "running" | "stopped" | "success" | "error";
 
+export type ExecutionRange = {
+  start?: number;
+  end?: number;
+};
+
+export type SelectedElementOptions = {
+  locators: string[],
+  ariaSnapshot: string,
+}
+
 export type ServerOperation = {
   opCode: 1;
   data: "authenticated";
 } | {
   opCode: 2;
   data: {
-    error: "auth-error" | "auth-invalid"
+    error: "auth-error" | "auth-invalid" | "unauthenticated"
   }
 } | {
   opCode: 3;
@@ -41,6 +51,12 @@ export type ServerOperation = {
     severity: number;
     message: string;
   }
+} | {
+  opCode: 5;
+  data: SelectedElementOptions;
+} | {
+  opCode: 6;
+  data: "context-reset";
 }
 
 export type ClientOperation = {
@@ -52,14 +68,20 @@ export type ClientOperation = {
   opCode: 2;
   data: {
     workflow: string;
-    range?: {
-      start?: number;
-      end?: number;
-    };
+    range?: ExecutionRange;
+    resetContext?: boolean;
   };
 } | {
   opCode: 3;
   data: "stop";
+} | {
+  opCode: 4;
+  data: {
+    inspect: boolean;
+  }
+} | {
+  opCode: 5;
+  data: "reset-context";
 };
 
 export type SocketConnection = {

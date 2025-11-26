@@ -1,62 +1,44 @@
 import net from "net";
 import vm from "vm";
 import { executeAllCommands, executeCommand, parseCommands, SETUP_SCRIPT } from "./executor";
-import { BlockExecutionStatus, ClientOperation, ExecutionStatus } from "./types";
-import { ACCESS_KEY, BUFFER_DELIMITER, MessageBuffer, MessageSender } from "./utils";
+import { BlockExecutionStatus, ClientOperation, ExecutionRange, ExecutionStatus } from "./types";
+import { ACCESS_KEY, BUFFER_DELIMITER, MessageBuffer, MessageSender, ServerConsole } from "./utils";
 import { Statement } from "estree";
 import escodegen from "escodegen";
 import { Browser, BrowserContext, chromium } from "playwright";
-import { Console } from "console";
-import util from "util";
 import { BrowserContextInspector } from "./inspector";
 
 export const OPERATION_SERVER_PORT = 8124;
 
-export class ServerConsole extends Console {
+interface OperationServerParams {
   sender: MessageSender;
-
-  constructor(sender: MessageSender) {
-    super({ stdout: process.stdout });
-    this.sender = sender;
-  }
-
-  private sendMessage(severity: number, message: string) {
-    this.sender.sendServerOperation({
-      opCode: 4,
-      data: {
-        timestamp: Date.now(),
-        origin: "Playwright",
-        severity,
-        message,
-      }
-    });
-  }
-
-  override log(message?: any, ...optionalParams: any[]): void {
-    this.sendMessage(1, util.format("%s", message, ...optionalParams));
-    super.log(message, ...optionalParams);
-  }
-
-  override error(message?: any, ...optionalParams: any[]): void {
-    this.sendMessage(3, util.format("%s", message, ...optionalParams));
-    super.log(message, ...optionalParams);
-  }
+  logger: ServerConsole;
+  browser: Browser;
+  browserContext: BrowserContext;
+  executionContext: vm.Context;
+  inspector: BrowserContextInspector;
 }
 
-export function runOperationServer(accessKey = ACCESS_KEY) {
-  const operationServer = net.createServer(async (c) => {
-    console.log(`client connected`, c.address());
-    const sender: MessageSender = new MessageSender(c, BUFFER_DELIMITER);
+export function runServer(accessKey = ACCESS_KEY) {
+  const operationServer = net.createServer(async (connection) => {
+    console.log(`client connected`, connection.address());
+
+    const sender = new MessageSender(connection, BUFFER_DELIMITER);
     const buffer = new MessageBuffer(BUFFER_DELIMITER);
-    const logger = new ServerConsole(sender);
 
+    let service: ServerOperationService | undefined = undefined;
     let authenticated = false;
-    let browser: Browser | undefined = undefined;
-    let browserContext: BrowserContext | undefined = undefined;
-    let context: vm.Context | undefined = undefined;
-    let inspector: BrowserContextInspector | undefined = undefined;
 
-    c.on("data", async (data) => {
+    const unauthenticated = () => {
+      sender.sendServerOperation({
+        opCode: 2,
+        data: {
+          error: "unauthenticated"
+        }
+      });
+    }
+
+    connection.on("data", async (data) => {
       try {
         buffer.append(data.toString());
         let captured = buffer.capture();
@@ -69,45 +51,8 @@ export function runOperationServer(accessKey = ACCESS_KEY) {
             case 1:
               if (operation.data.accessKey === accessKey) {
                 try {
+                  service = await ServerOperationService.create(sender, buffer);
                   authenticated = true;
-
-                  browser = await chromium.launch({ headless: false });
-                  browserContext = await browser.newContext();
-
-                  browserContext.on('console', (consoleMessage) => {
-                    const message = consoleMessage.text();
-                    const messageType = consoleMessage.type();
-                    sender.sendServerOperation({
-                      opCode: 4,
-                      data: {
-                        timestamp: Date.now(),
-                        origin: "Browser",
-                        severity: messageType === "debug" ? 0
-                          : messageType === "warning" ? 2
-                            : messageType === "error" ? 3
-                              : 1,
-                        message,
-                      }
-                    });
-                  });
-
-                  inspector = await BrowserContextInspector.create(
-                    browserContext,
-                    (opts) => console.log(opts),
-                  )
-                  // inspector.setInspecting(true);
-
-                  const page = await browserContext.newPage();
-
-                  context = vm.createContext({
-                    require,
-                    fetch,
-                    browser,
-                    context: browserContext,
-                    page,
-                  });
-                  await executeAllCommands(context, SETUP_SCRIPT);
-
                   sender.sendServerOperation({
                     opCode: 1,
                     data: "authenticated"
@@ -131,63 +76,25 @@ export function runOperationServer(accessKey = ACCESS_KEY) {
               }
               break;
             case 2:
-              if (!authenticated || !context) return;
-
-              const { statements, displacement } = parseCommands(
+              if (!authenticated) return unauthenticated();
+              service?.executeWorkflow(
                 operation.data.workflow,
-                operation.data.range?.start,
-                operation.data.range?.end,
+                operation.data.range,
+                operation.data.resetContext
               );
-
-              const blockStatus: BlockExecutionStatus = {};
-              let executionStatus: ExecutionStatus = "running";
-
-              const sendStatus = () => sender.sendServerOperation({
-                opCode: 3,
-                data: {
-                  lines: blockStatus,
-                  status: executionStatus,
-                }
-              });
-
-              for (const [index, statement] of statements.entries()) {
-                const startLine = statement.loc?.start.line as number - displacement.startLine;
-                const endLine = statement.loc?.end.line as number - displacement.startLine;
-                const nextStatement = statements[index + 1] as Statement | undefined;
-                const nextStartLine = nextStatement?.loc?.start.line
-                  ? nextStatement?.loc?.start.line - displacement.startLine
-                  : undefined;
-
-                blockStatus[`${startLine}`] = "pending";
-                sendStatus();
-
-                try {
-                  const lineLabel = endLine - startLine
-                    ? `${startLine} - ${endLine}`
-                    : `${startLine}`
-
-                  logger.log(`${lineLabel}: ${escodegen.generate(statement)}`);
-                  await executeCommand(context, statement);
-                  for (let i = startLine; i <= endLine; i++) {
-                    if (i !== endLine || nextStartLine !== endLine) {
-                      blockStatus[`${i}`] = "success";
-                    }
-                  }
-
-                  if (index === statements.length - 1) {
-                    executionStatus = "success";
-                    inspector?.setInspecting(true);
-                    sendStatus();
-                  }
-                } catch (error) {
-                  logger.error(error);
-                  blockStatus[`${startLine}`] = "error";
-                  executionStatus = "error";
-                  sendStatus();
-                  break;
-                }
-              }
+            case 3:
+              if (!authenticated) return unauthenticated();
+              break;
+            case 4:
+              if (!authenticated) return unauthenticated();
+              service?.setInspecting(operation.data.inspect);
+              break;
+            case 5:
+              if (!authenticated) return unauthenticated();
+              service?.resetContext();
+              break;
             default:
+              if (!authenticated) return unauthenticated();
               break;
           }
           captured = buffer.capture();
@@ -198,16 +105,14 @@ export function runOperationServer(accessKey = ACCESS_KEY) {
       }
     });
 
-    c.on('close', async () => {
-      if (context) {
-        await executeAllCommands(context, "await browser.close()");
-      }
+    connection.on('close', async () => {
+      service?.close();
       console.log('client disconnected');
     });
 
     setTimeout(() => {
       if (!authenticated) {
-        c.end();
+        connection.end();
       }
     }, 10000);
   });
@@ -223,6 +128,157 @@ export function runOperationServer(accessKey = ACCESS_KEY) {
   process.send?.("ready");
 }
 
-export function runServer(accessKey?: string) {
-  runOperationServer(accessKey);
+class ServerOperationService {
+  private sender!: MessageSender;
+  private logger!: ServerConsole;
+  private browser!: Browser;
+  private browserContext!: BrowserContext;
+  private executionContext!: vm.Context;
+  private inspector!: BrowserContextInspector;
+
+  private constructor(params: OperationServerParams) {
+    Object.assign(this, params);
+  }
+
+  static async create(sender: MessageSender, buffer: MessageBuffer) {
+    const logger = new ServerConsole(sender);
+
+    let browser: Browser;
+    let browserContext: BrowserContext;
+    let executionContext: vm.Context;
+    let inspector: BrowserContextInspector;
+
+    browser = await chromium.launch({ headless: false });
+    browserContext = await browser.newContext();
+
+    browserContext.on('console', (consoleMessage) => {
+      const message = consoleMessage.text();
+      const messageType = consoleMessage.type();
+      sender.sendServerOperation({
+        opCode: 4,
+        data: {
+          timestamp: Date.now(),
+          origin: "Browser",
+          severity: messageType === "debug" ? 0
+            : messageType === "warning" ? 2
+              : messageType === "error" ? 3
+                : 1,
+          message,
+        }
+      });
+    });
+
+    inspector = await BrowserContextInspector.create(
+      browserContext,
+      (opts) => {
+        sender.sendServerOperation({
+          opCode: 5,
+          data: opts,
+        });
+      },
+    );
+
+    const page = await browserContext.newPage();
+
+    executionContext = vm.createContext({
+      require,
+      fetch,
+      browser,
+      context: browserContext,
+      page,
+    });
+
+    await executeAllCommands(executionContext, SETUP_SCRIPT);
+
+    const params: OperationServerParams = {
+      sender,
+      logger,
+      browser,
+      browserContext,
+      executionContext,
+      inspector,
+    }
+    return new ServerOperationService(params);
+  }
+
+  resetContext() {
+    this.executionContext = vm.createContext({
+      require,
+      fetch,
+      browser: this.browser,
+      context: this.browserContext,
+      page,
+    });
+    return this.executionContext;
+  }
+
+  async executeWorkflow(workflow: string, range?: ExecutionRange, resetContext?: boolean) {
+    if (!this.executionContext) return;
+
+    if (resetContext) {
+      this.resetContext();
+    }
+
+    const { statements, displacement } = parseCommands(
+      workflow,
+      range?.start,
+      range?.end,
+    );
+
+    const blockStatus: BlockExecutionStatus = {};
+    let executionStatus: ExecutionStatus = "running";
+
+    const sendStatus = () => this.sender.sendServerOperation({
+      opCode: 3,
+      data: {
+        lines: blockStatus,
+        status: executionStatus,
+      }
+    });
+
+    for (const [index, statement] of statements.entries()) {
+      const startLine = statement.loc?.start.line as number - displacement.startLine;
+      const endLine = statement.loc?.end.line as number - displacement.startLine;
+      const nextStatement = statements[index + 1] as Statement | undefined;
+      const nextStartLine = nextStatement?.loc?.start.line
+        ? nextStatement?.loc?.start.line - displacement.startLine
+        : undefined;
+
+      blockStatus[`${startLine}`] = "pending";
+      sendStatus();
+
+      try {
+        const lineLabel = endLine - startLine
+          ? `${startLine} - ${endLine}`
+          : `${startLine}`
+
+        this.logger.log(`${lineLabel}: ${escodegen.generate(statement)}`);
+        await executeCommand(this.executionContext, statement);
+        for (let i = startLine; i <= endLine; i++) {
+          if (i !== endLine || nextStartLine !== endLine) {
+            blockStatus[`${i}`] = "success";
+          }
+        }
+
+        if (index === statements.length - 1) {
+          executionStatus = "success";
+          sendStatus();
+        }
+      } catch (error) {
+        this.logger.error(error);
+        blockStatus[`${startLine}`] = "error";
+        executionStatus = "error";
+        sendStatus();
+        break;
+      }
+    }
+  }
+
+  setInspecting(inspect: boolean) {
+    this.inspector.setInspecting(inspect);
+  }
+
+  close() {
+    return executeAllCommands(this.executionContext, "await browser.close()");
+  }
 }

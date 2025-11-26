@@ -1,12 +1,10 @@
-// Demonstrates using the Playwright InjectedScript and Recorder API to enable / disable
-// Playwright Recorder capabilities in the browser
-
 import { BrowserContext, Page } from "@playwright/test";
 import path from "path";
 import fs from "fs/promises"
 import type { InjectedScript } from "./vendor/playwright/injected/src/injectedScript";
 import type { Recorder, RecorderDelegate } from "./vendor/playwright/injected/src/recorder/recorder";
 import { UIState } from "./vendor/playwright/recorder/src/recorderTypes";
+import { SelectedElementOptions } from "./types";
 
 const ROOT = path.join(__dirname, "..");
 const injectedScriptPath = path.join(ROOT, "dist", "vendor", "playwright", "injected", "generated", "injectedScript.js")
@@ -20,12 +18,6 @@ type ActionInput = {
   snippet: (locator: string, ariaSnapshot: string) => string;
 }
 type ActionMap = Record<Action, ActionInput>;
-
-type SelectedElementOptions = {
-  actions: readonly Action[],
-  locators: string[],
-  ariaSnapshot: string,
-}
 
 declare global {
   interface Window {
@@ -96,10 +88,10 @@ export class BrowserContextInspector {
         console.log(inspector.inspecting);
         inspector.setUIState(inspector.inspecting, page);
       }
-    )
+    );
 
     await browserContext.addInitScript(
-      async ([scriptContents, testIdAttributeName, actions]) => {
+      async ([scriptContents, testIdAttributeName]) => {
         const actionMap: ActionMap = {
           "click": {
             label: "Click",
@@ -182,12 +174,6 @@ export class BrowserContextInspector {
           console.log(recorder);
 
           const delegate: RecorderDelegate = {
-            async performAction(action) {
-              console.log('performAction action', action);
-            },
-            async recordAction(action) {
-              console.log('recordAction action', action);
-            },
             async elementPicked(elementInfo) {
               if (elementInfo.element) {
                 const generated = injectedScript.generateSelector(elementInfo.element, { testIdAttributeName });
@@ -196,24 +182,10 @@ export class BrowserContextInspector {
                 const allLocators = generated.selectors
                   .map(selector => injectedScript.utils.asLocators("javascript", selector))
                   .flat()
-                const currentOptions = { actions, locators: allLocators, ariaSnapshot: elementInfo.ariaSnapshot }
+                const currentOptions = { locators: allLocators, ariaSnapshot: elementInfo.ariaSnapshot }
                 window.currentOptions = currentOptions;
                 window.updateCurrentOptions(currentOptions);
-
-                console.log('elementPicked', { elementInfo, generated, locator, locators });
-                console.log('elementPicked currentOptions', window.currentOptions);
-              } else {
-                console.log('elementPicked elementInfo', elementInfo);
               }
-            },
-            async setMode(mode) {
-              console.log('setMode mode', mode);
-            },
-            async setOverlayState(state) {
-              console.log('setOverlayState state', state);
-            },
-            highlightUpdated() {
-              console.log('highlightUpdated');
             },
           };
 
@@ -239,7 +211,7 @@ export class BrowserContextInspector {
         }
         window.addEventListener("DOMContentLoaded", injectionListener);
       },
-      [scriptContents, testIdAttributeName, actions] as const
+      [scriptContents, testIdAttributeName] as const
     );
 
     return inspector;

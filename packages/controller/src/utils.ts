@@ -2,6 +2,7 @@ import net from "net";
 import { Console } from "console";
 import EventEmitter from "events";
 import { ClientOperation, ServerOperation } from "./types";
+import util from "util";
 
 export const BUFFER_DELIMITER = '\0\0\0';
 export const ACCESS_KEY = process.env.ACCESS_KEY || "helloworld";
@@ -91,8 +92,6 @@ export class MessageBuffer {
     this.encoder = new TextEncoder();
     this.delimiter = this.encoder.encode(delimiter);
     this.buffered = new Uint8Array();
-    // console.log('constructor delimiter', this.delimiter.toString());
-    // console.log('constructor buffered', this.buffered.toString());
   }
 
   append(incomingData: string) {
@@ -111,5 +110,36 @@ export class MessageBuffer {
         return Buffer.from(captured).toString();
       }
     }
+  }
+}
+
+export class ServerConsole extends Console {
+  sender: MessageSender;
+
+  constructor(sender: MessageSender) {
+    super({ stdout: process.stdout });
+    this.sender = sender;
+  }
+
+  private sendMessage(severity: number, message: string) {
+    this.sender.sendServerOperation({
+      opCode: 4,
+      data: {
+        timestamp: Date.now(),
+        origin: "Playwright",
+        severity,
+        message,
+      }
+    });
+  }
+
+  override log(message?: any, ...optionalParams: any[]): void {
+    this.sendMessage(1, util.format("%s", message, ...optionalParams));
+    super.log(message, ...optionalParams);
+  }
+
+  override error(message?: any, ...optionalParams: any[]): void {
+    this.sendMessage(3, util.format("%s", message, ...optionalParams));
+    super.log(message, ...optionalParams);
   }
 }

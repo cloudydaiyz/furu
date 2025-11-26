@@ -37,9 +37,10 @@ async function launchApi() {
   app.get('/', async (req, res) => {
     const { sender } = await runClient(accessKey);
     const commandOperation = await getSampleCommand();
+    commandOperation.data.resetContext = true;
     sender.sendClientOperation(commandOperation);
     res.send('Operation sent');
-  })
+  });
 
   io.on("connection", (socket) => {
     console.log("New connection!");
