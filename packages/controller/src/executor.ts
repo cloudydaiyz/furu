@@ -1,16 +1,36 @@
 import vm from "vm";
-import { processTopLevelAwait } from './vendor/node/await';
-
 import type { FunctionDeclaration, Statement } from "estree";
 import * as esprima from "esprima";
 import escodegen from "escodegen";
-import { WorkflowTemplate, WorkflowTemplateDisplacement } from "./types";
-import EventEmitter from "events";
+import { processTopLevelAwait } from './vendor/node/await';
+import { BlockExecutionStatus, ExecutionRange, ExecutionStatus, WorkflowTemplate, WorkflowTemplateDisplacement } from "./types";
+import { Browser, BrowserContext, Page, chromium } from "playwright";
+import { BrowserContextInspector } from "./inspector";
+import { MessageSender, ServerConsole } from "./utils";
+
+export interface WorkflowExecutionContext {
+  sender: MessageSender;
+  logger: ServerConsole;
+  browser: Browser;
+  browserContext: BrowserContext;
+  page: Page;
+  executionContext: vm.Context;
+  inspector: BrowserContextInspector;
+  aborter: AbortController;
+}
+
+interface VMContext {
+  require: typeof require;
+  fetch: typeof fetch;
+  browser: Browser;
+  context: BrowserContext;
+  console: typeof console;
+  page: Page;
+}
 
 export const SETUP_SCRIPT = [
   // 'const { chromium } = require("playwright");',
   'const { test, expect, Locator } = require("@playwright/test");',
-  '_abortController.abort()',
   'const { injectAxe, checkA11y, getAxeResults } = require("axe-playwright")',
   // "const browser = await chromium.launch({ headless: false });",
   // "const context = await browser.newContext();",
@@ -34,58 +54,11 @@ export const WORKFLOW_TEST_TEMPLATE: WorkflowTemplate = {
   workflowInsert: 2,
 }
 
-export function registerAborter(_abortSignal: AbortSignal) {
-  const aborterStatusEvents = new EventEmitter();
-  let statusEventsReady = false;
-  let aborted = false;
-
-  async function waitForReady() {
-    return new Promise<void>((resolve) => {
-      const resolveListener = () => {
-        console.log("resolved");
-        aborterStatusEvents.off("ready", resolveListener);
-        resolve();
-      };
-      aborterStatusEvents.on("ready", resolveListener);
-
-      if (statusEventsReady) resolve();
-    });
-  }
-
-  let cancelAborter: () => void;
-  new Promise<void>(async (_resolve, _reject) => {
-    const rejectOnAbort = () => {
-      console.log('abort event');
-      _reject('Workflow aborted');
-    };
-    _abortSignal.addEventListener('abort', rejectOnAbort);
-    if (_abortSignal.aborted) _reject('Workflow aborted');
-
-    cancelAborter = () => {
-      _abortSignal.removeEventListener('abort', rejectOnAbort);
-      _resolve();
-    }
-
-    statusEventsReady = true;
-    aborterStatusEvents.emit("ready");
-  });
-
-  async function deregisterAborter() {
-    await waitForReady();
-    cancelAborter();
-  }
-  return deregisterAborter;
+export function createVMContext(ctx: VMContext) {
+  return vm.createContext(ctx);
 }
 
-function processStatement(statement: string, protect?: boolean) {
-  if (protect) {
-    statement = [
-      "_deregisterAborter = _registerAborter(_abortSignal);",
-      statement,
-      "await _deregisterAborter();"
-    ].join("\n");
-  }
-  console.log('processStatement statement', statement);
+function processStatement(statement: string) {
   return processTopLevelAwait(statement) ?? statement;
 }
 
@@ -145,13 +118,13 @@ export async function executeCommand(
   statement: Statement,
 ) {
   const regenerated = escodegen.generate(statement);
-  const processedStatement = processStatement(regenerated, true);
-  console.log('processedStatement', processedStatement);
-
+  const processedStatement = processStatement(regenerated);
   await Promise.resolve(
     vm.runInContext(processedStatement, context, { breakOnSigint: true })
-  );
+  )
 }
+
+class AbortError extends Error { }
 
 export async function executeAllCommands(
   context: vm.Context,
@@ -162,5 +135,215 @@ export async function executeAllCommands(
   const { statements } = parseCommands(workflow, startLine, endLine);
   for (const [index, statement] of statements.entries()) {
     await executeCommand(context, statement);
+  }
+}
+
+export class WorkflowExecutor {
+  private sender!: MessageSender;
+  private logger!: ServerConsole;
+  private browser!: Browser;
+  private browserContext!: BrowserContext;
+  private page!: Page;
+  private executionContext!: vm.Context;
+  private inspector!: BrowserContextInspector;
+  private aborter!: AbortController;
+
+  private constructor(params: WorkflowExecutionContext) {
+    Object.assign(this, params);
+  }
+
+  static async create(sender: MessageSender) {
+    const logger = new ServerConsole(sender);
+
+    let browser: Browser;
+    let browserContext: BrowserContext;
+    let executionContext: vm.Context;
+    let inspector: BrowserContextInspector;
+
+    browser = await chromium.launch({ headless: false });
+    browserContext = await browser.newContext();
+
+    browserContext.on('console', (consoleMessage) => {
+      const message = consoleMessage.text();
+      const messageType = consoleMessage.type();
+      sender.sendServerOperation({
+        opCode: 4,
+        data: {
+          timestamp: Date.now(),
+          origin: "Browser",
+          severity: messageType === "debug" ? 0
+            : messageType === "warning" ? 2
+              : messageType === "error" ? 3
+                : 1,
+          message,
+        }
+      });
+    });
+
+    inspector = await BrowserContextInspector.create(
+      browserContext,
+      (opts) => {
+        sender.sendServerOperation({
+          opCode: 5,
+          data: opts,
+        });
+      }
+    );
+
+    const page = await browserContext.newPage();
+
+    executionContext = createVMContext({
+      require,
+      fetch,
+      browser,
+      context: browserContext,
+      console,
+      page,
+    });
+
+    const aborter = new AbortController();
+    try {
+      await executeAllCommands(executionContext, SETUP_SCRIPT);
+    } catch (err) {
+      console.error("Unable to start ServerOperationService. Error:");
+      console.error(err);
+      throw err;
+    }
+
+    return new WorkflowExecutor({
+      sender,
+      logger,
+      browser,
+      browserContext,
+      page,
+      executionContext,
+      inspector,
+      aborter,
+    });
+  }
+
+  resetContext() {
+    this.resetAborter();
+    this.executionContext = createVMContext({
+      require,
+      fetch,
+      browser: this.browser,
+      context: this.browserContext,
+      page: this.page,
+      console,
+    });
+    this.sender.sendServerOperation({
+      opCode: 6,
+      data: "context-reset",
+    });
+    return this.executionContext;
+  }
+
+  resetAborter() {
+    this.aborter = new AbortController();
+    this.executionContext._abortSignal = this.aborter.signal;
+  }
+
+  abort(reason?: any) {
+    this.aborter.abort(reason);
+  }
+
+  async executeWorkflow(workflow: string, range?: ExecutionRange, resetContext?: boolean) {
+    if (!this.executionContext) {
+      throw new Error("Execution context is not set up");
+    }
+
+    if (resetContext) {
+      this.resetContext();
+    } else {
+      this.resetAborter();
+    }
+
+    const { statements, displacement } = parseCommands(
+      workflow,
+      range?.start,
+      range?.end
+    );
+
+    const blockStatus: BlockExecutionStatus = {};
+    let executionStatus: ExecutionStatus = "running";
+
+    const sendStatus = () => this.sender.sendServerOperation({
+      opCode: 3,
+      data: {
+        lines: blockStatus,
+        status: executionStatus,
+      }
+    });
+
+    for (const [index, statement] of statements.entries()) {
+      const startLine = (statement.loc?.start.line as number) - displacement.startLine;
+      const endLine = (statement.loc?.end.line as number) - displacement.startLine;
+      const nextStatement = statements[index + 1] as Statement | undefined;
+      const nextStartLine = nextStatement?.loc?.start.line
+        ? nextStatement?.loc?.start.line - displacement.startLine
+        : undefined;
+
+      blockStatus[`${startLine}`] = "pending";
+      sendStatus();
+
+      try {
+        const lineLabel = endLine - startLine
+          ? `${startLine} - ${endLine}`
+          : `${startLine}`;
+
+        this.logger.log(`${lineLabel}: ${escodegen.generate(statement)}`);
+
+        const result = await Promise.race([
+          executeCommand(
+            this.executionContext,
+            statement,
+          ).catch(err => {
+            if (!this.aborter.signal.aborted) {
+              throw err;
+            }
+          }),
+          new Promise((reject) => {
+            const abort = () => {
+              console.log('executeCommand aborted');
+              reject(new AbortError("Command aborted"));
+            }
+            this.aborter.signal.addEventListener("abort", abort);
+            if (this.aborter.signal.aborted) abort();
+          }),
+        ]);
+
+        if (result instanceof Error) {
+          throw result;
+        }
+
+        for (let i = startLine; i <= endLine; i++) {
+          if (i !== endLine || nextStartLine !== endLine) {
+            blockStatus[`${i}`] = "success";
+          }
+        }
+      } catch (error) {
+        this.logger.error(error);
+        blockStatus[`${startLine}`] = "error";
+        executionStatus = "error";
+        sendStatus();
+        return;
+      }
+    }
+
+    executionStatus = "success";
+    sendStatus();
+  }
+
+  setInspecting(inspect: boolean) {
+    this.inspector.setInspecting(inspect);
+  }
+
+  async close() {
+    this.resetAborter();
+    await executeAllCommands(
+      this.executionContext,
+      "await browser.close()",
+    );
   }
 }

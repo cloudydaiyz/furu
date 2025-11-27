@@ -5,7 +5,7 @@ import { ClientOperation, ServerOperation } from "./types";
 import util from "util";
 
 export const BUFFER_DELIMITER = '\0\0\0';
-export const ACCESS_KEY = process.env.ACCESS_KEY || "helloworld";
+export const DEFAULT_ACCESS_KEY = process.env.ACCESS_KEY || "helloworld";
 export const defaultConsole = { ...console };
 
 export function setGlobalConsole(newConsole: Console) {
@@ -70,15 +70,15 @@ export class MessageSender {
     this.delimiter = delimiter;
   }
 
-  sendServerOperation(
-    operation: ServerOperation,
-  ) {
-    this.receiver.write(`${JSON.stringify(operation)}${this.delimiter}`);
+  sendServerOperation(operation: ServerOperation) {
+    this.sendOperation(operation);
   }
 
-  sendClientOperation(
-    operation: ClientOperation,
-  ) {
+  sendClientOperation(operation: ClientOperation) {
+    this.sendOperation(operation);
+  }
+
+  private sendOperation(operation: any) {
     this.receiver.write(`${JSON.stringify(operation)}${this.delimiter}`);
   }
 }

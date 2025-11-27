@@ -1,34 +1,36 @@
 import net from "net";
 import path from "path";
 import fs from "fs/promises";
-import { ClientOperation, ServerOperation, SocketConnection } from "./types";
-import { OPERATION_SERVER_PORT } from "./server";
-import { BUFFER_DELIMITER, MessageBuffer, MessageSender, ACCESS_KEY } from "./utils";
-import { fork, spawn } from "child_process";
+import { ClientOperation, ExecutionRange, ServerOperation, SocketConnection } from "./types";
+import { DEFAULT_OPERATION_SERVER_PORT } from "./server";
+import { BUFFER_DELIMITER, MessageBuffer, MessageSender, DEFAULT_ACCESS_KEY } from "./utils";
+import { spawn } from "child_process";
 
-// const dirname = path.dirname(__filename);
 const MAX_AUTH_RETRIES = 0;
 
-export async function getSampleCommand() {
-  // const title = "todo-mvc";
-  // const title = "hacker-news-sorted";
-  const title = "hacker-news-cwv";
-  // const title = "hacker-news-accessibility";
-  // const title = "crawl-y-combinator";
+export interface ControllerClientOptions {
+  accessKey?: string,
+  launchServer?: boolean,
+  port?: number,
+  host?: string,
+  onServerOperation?: (op: ServerOperation) => Promise<void>,
+  maxAuthRetries?: number,
+}
 
+export async function sendSampleCommand(sender: MessageSender, title: string, range?: ExecutionRange) {
   const sourcePath = path.join(__dirname, "..", "examples", "workflows", `${title}.mjs`);
   const workflow = await fs.readFile(sourcePath, "utf-8");
   const operation: ClientOperation = {
     opCode: 2,
     data: {
       workflow,
-      // executionRange: { start: 1, end: 5 }
+      range,
     }
   };
-  return operation;
+  sender.sendClientOperation(operation);
 }
 
-export function launchLocalServer(accessKey = ACCESS_KEY) {
+export function launchLocalServer(accessKey = DEFAULT_ACCESS_KEY) {
   const serverFile = path.join(__dirname, "start.js");
   console.log(serverFile);
 
@@ -51,18 +53,24 @@ export function launchLocalServer(accessKey = ACCESS_KEY) {
   return child;
 }
 
-function connectToServer(accessKey: string, host?: string): SocketConnection {
+function connectToServer({
+  accessKey = DEFAULT_ACCESS_KEY,
+  port = DEFAULT_OPERATION_SERVER_PORT,
+  host,
+  onServerOperation,
+  maxAuthRetries = MAX_AUTH_RETRIES,
+}: ControllerClientOptions): SocketConnection {
   let sender: MessageSender;
 
-  const serverSocket = net.createConnection(
-    { port: OPERATION_SERVER_PORT, host },
+  const socket = net.createConnection(
+    { port, host },
     async () => {
       console.log('connected to server!');
 
       const buffer = new MessageBuffer(BUFFER_DELIMITER);
       let authRetries = 0;
 
-      serverSocket.on('data', async (data) => {
+      socket.on('data', async (data) => {
         buffer.append(data.toString());
         let captured = buffer.capture();
 
@@ -76,7 +84,7 @@ function connectToServer(accessKey: string, host?: string): SocketConnection {
             case 2:
               if ((operation.data.error === "auth-error"
                 || operation.data.error === "unauthenticated")
-                && authRetries < MAX_AUTH_RETRIES
+                && authRetries < maxAuthRetries
               ) {
                 sender.sendClientOperation({
                   opCode: 1,
@@ -84,11 +92,11 @@ function connectToServer(accessKey: string, host?: string): SocketConnection {
                 });
                 authRetries++;
               } else {
-                serverSocket.end();
+                socket.end();
               }
               break;
             case 3:
-              if (operation.data.status !== "running") {
+              if (operation.data.status === "success") {
                 // serverSocket.end();
                 sender.sendClientOperation({
                   opCode: 4,
@@ -108,36 +116,43 @@ function connectToServer(accessKey: string, host?: string): SocketConnection {
             default:
               break;
           }
+
+          await onServerOperation?.(operation);
           captured = buffer.capture();
         }
       });
 
-      serverSocket.on('end', () => {
+      socket.on('end', () => {
         console.log('disconnected from server');
       });
     }
   );
 
-  sender = new MessageSender(serverSocket, BUFFER_DELIMITER);
+  sender = new MessageSender(socket, BUFFER_DELIMITER);
   sender.sendClientOperation({
     opCode: 1,
-    data: { accessKey: ACCESS_KEY }
+    data: { accessKey: DEFAULT_ACCESS_KEY }
   });
 
-  return { socket: serverSocket, sender };
+  return { socket, sender };
 }
 
-export async function runClient(accessKey = ACCESS_KEY, launchServer?: boolean) {
+export async function runClient(opts: ControllerClientOptions = {}) {
+  const {
+    accessKey = DEFAULT_ACCESS_KEY,
+    launchServer
+  } = opts;
+
   if (launchServer) {
     const socket = await new Promise<SocketConnection>((res) => {
       const server = launchLocalServer(accessKey);
       server.on('message', msg => {
         if (msg === "ready") {
-          res(connectToServer(accessKey));
+          res(connectToServer(opts));
         }
       });
     });
     return socket;
   }
-  return connectToServer(accessKey);
+  return connectToServer(opts);
 }
