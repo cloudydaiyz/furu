@@ -10,9 +10,9 @@ import { fork, spawn } from "child_process";
 const MAX_AUTH_RETRIES = 0;
 
 export async function getSampleCommand() {
-  const title = "todo-mvc";
+  // const title = "todo-mvc";
   // const title = "hacker-news-sorted";
-  // const title = "hacker-news-cwv";
+  const title = "hacker-news-cwv";
   // const title = "hacker-news-accessibility";
   // const title = "crawl-y-combinator";
 
@@ -72,9 +72,6 @@ function connectToServer(accessKey: string, host?: string): SocketConnection {
 
           switch (operation.opCode) {
             case 1:
-              // const commandOperation = await getSampleCommand();
-              // commandOperation.data.resetContext = true;
-              // sender.sendClientOperation(commandOperation);
               break;
             case 2:
               if ((operation.data.error === "auth-error"

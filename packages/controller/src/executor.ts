@@ -5,16 +5,12 @@ import type { FunctionDeclaration, Statement } from "estree";
 import * as esprima from "esprima";
 import escodegen from "escodegen";
 import { WorkflowTemplate, WorkflowTemplateDisplacement } from "./types";
+import EventEmitter from "events";
 
 export const SETUP_SCRIPT = [
   // 'const { chromium } = require("playwright");',
-  // "if(globalThis.DESTROY) { console.log('DESTROY detected'); process.exit(0) }",
-  // "const err = new Error('SETUP_SCRIPT error'); globalThis.err = err; throw err;",
-  "console.log('aborter', aborter);",
-  "aborter.signal.addEventListener('abort', () => { console.log('abort event'); throw new Error('Custom abort') })",
-  "aborter.abort('idk');",
-  // "const err = new SyntaxError('SETUP_SCRIPT error'); globalThis.err = err; globalThis._aborted = true; throw err;",
   'const { test, expect, Locator } = require("@playwright/test");',
+  '_abortController.abort()',
   'const { injectAxe, checkA11y, getAxeResults } = require("axe-playwright")',
   // "const browser = await chromium.launch({ headless: false });",
   // "const context = await browser.newContext();",
@@ -38,8 +34,59 @@ export const WORKFLOW_TEST_TEMPLATE: WorkflowTemplate = {
   workflowInsert: 2,
 }
 
-function processStatement(statement: string) {
-  return processTopLevelAwait(statement) ?? statement
+export function registerAborter(_abortSignal: AbortSignal) {
+  const aborterStatusEvents = new EventEmitter();
+  let statusEventsReady = false;
+  let aborted = false;
+
+  async function waitForReady() {
+    return new Promise<void>((resolve) => {
+      const resolveListener = () => {
+        console.log("resolved");
+        aborterStatusEvents.off("ready", resolveListener);
+        resolve();
+      };
+      aborterStatusEvents.on("ready", resolveListener);
+
+      if (statusEventsReady) resolve();
+    });
+  }
+
+  let cancelAborter: () => void;
+  new Promise<void>(async (_resolve, _reject) => {
+    const rejectOnAbort = () => {
+      console.log('abort event');
+      _reject('Workflow aborted');
+    };
+    _abortSignal.addEventListener('abort', rejectOnAbort);
+    if (_abortSignal.aborted) _reject('Workflow aborted');
+
+    cancelAborter = () => {
+      _abortSignal.removeEventListener('abort', rejectOnAbort);
+      _resolve();
+    }
+
+    statusEventsReady = true;
+    aborterStatusEvents.emit("ready");
+  });
+
+  async function deregisterAborter() {
+    await waitForReady();
+    cancelAborter();
+  }
+  return deregisterAborter;
+}
+
+function processStatement(statement: string, protect?: boolean) {
+  if (protect) {
+    statement = [
+      "_deregisterAborter = _registerAborter(_abortSignal);",
+      statement,
+      "await _deregisterAborter();"
+    ].join("\n");
+  }
+  console.log('processStatement statement', statement);
+  return processTopLevelAwait(statement) ?? statement;
 }
 
 function getWorkflowStatements(ast: esprima.Program) {
@@ -47,7 +94,7 @@ function getWorkflowStatements(ast: esprima.Program) {
   return wrapper.body.body;
 }
 
-function buildWorkflowTemplate(workflow: string, template: WorkflowTemplate) {
+function useWorkflowTemplate(workflow: string, template: WorkflowTemplate) {
   const script = template.wrapper.slice();
   script.splice(template.workflowInsert, 0, workflow);
   return script.join("\n");
@@ -87,7 +134,7 @@ export function parseCommands(
   startLine?: number,
   endLine?: number
 ) {
-  const source = buildWorkflowTemplate(workflow, WORKFLOW_SCRIPT_TEMPLATE);
+  const source = useWorkflowTemplate(workflow, WORKFLOW_SCRIPT_TEMPLATE);
   const sourceAst = esprima.parseModule(source, { loc: true, range: true });
   const workflowStatements = getWorkflowStatements(sourceAst);
   return getStatementsWithinRange(workflowStatements, startLine, endLine);
@@ -96,47 +143,24 @@ export function parseCommands(
 export async function executeCommand(
   context: vm.Context,
   statement: Statement,
-  aborter: AbortController,
 ) {
   const regenerated = escodegen.generate(statement);
-  const protectedStatement = `
-  await new Promise((res, rej) => {
-  const throwOnAbort = () => { 
-    console.log('abort event'); 
-    rej('Custom abort');
-  };
-  aborter.signal.addEventListener('abort', throwOnAbort);
-  ${regenerated}
-  aborter.signal.removeEventListener('abort', throwOnAbort);
-  res();
-});
-`
-  const processedStatement = processStatement(protectedStatement);
+  const processedStatement = processStatement(regenerated, true);
   console.log('processedStatement', processedStatement);
 
-  try {
-    await Promise.resolve(
-      vm.runInContext(processedStatement, context, { breakOnSigint: true })
-    );
-    console.log("aborter.signal.aborted", aborter.signal.aborted);
-  } catch (err) {
-    console.log("(in err) aborter.signal.aborted", aborter.signal.aborted);
-    console.log('executeCommand err', err instanceof SyntaxError, err);
-    console.log('context err', context.err instanceof SyntaxError, context.err);
-    console.log('context aborted', context._aborted);
-  }
+  await Promise.resolve(
+    vm.runInContext(processedStatement, context, { breakOnSigint: true })
+  );
 }
 
 export async function executeAllCommands(
   context: vm.Context,
   workflow: string,
-  aborter: AbortController,
   startLine?: number,
   endLine?: number,
 ) {
-  console.log('executeAllCommands');
   const { statements } = parseCommands(workflow, startLine, endLine);
   for (const [index, statement] of statements.entries()) {
-    await executeCommand(context, statement, aborter);
+    await executeCommand(context, statement);
   }
 }

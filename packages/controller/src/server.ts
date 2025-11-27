@@ -1,11 +1,11 @@
 import net from "net";
 import vm from "vm";
-import { executeAllCommands, executeCommand, parseCommands, SETUP_SCRIPT } from "./executor";
+import { executeAllCommands, executeCommand, parseCommands, registerAborter, SETUP_SCRIPT } from "./executor";
 import { BlockExecutionStatus, ClientOperation, ExecutionRange, ExecutionStatus } from "./types";
 import { ACCESS_KEY, BUFFER_DELIMITER, MessageBuffer, MessageSender, ServerConsole } from "./utils";
 import { Statement } from "estree";
 import escodegen from "escodegen";
-import { Browser, BrowserContext, chromium } from "playwright";
+import { Browser, BrowserContext, Page, chromium } from "playwright";
 import { BrowserContextInspector } from "./inspector";
 
 export const OPERATION_SERVER_PORT = 8124;
@@ -15,8 +15,26 @@ interface OperationServerContext {
   logger: ServerConsole;
   browser: Browser;
   browserContext: BrowserContext;
+  page: Page;
   executionContext: vm.Context;
   inspector: BrowserContextInspector;
+  aborter: AbortController;
+}
+
+interface VMContext {
+  require: typeof require;
+  fetch: typeof fetch;
+  browser: Browser;
+  context: BrowserContext;
+  console: typeof console;
+  page: Page;
+  _abortSignal: AbortSignal;
+  _abortController: AbortController;
+  _registerAborter: typeof registerAborter;
+}
+
+function createVMContext(ctx: VMContext) {
+  return vm.createContext(ctx);
 }
 
 export function runServer(accessKey = ACCESS_KEY) {
@@ -129,8 +147,10 @@ class ServerOperationService {
   private logger!: ServerConsole;
   private browser!: Browser;
   private browserContext!: BrowserContext;
+  private page!: Page;
   private executionContext!: vm.Context;
   private inspector!: BrowserContextInspector;
+  private aborter!: AbortController;
 
   private constructor(params: OperationServerContext) {
     Object.assign(this, params);
@@ -176,53 +196,69 @@ class ServerOperationService {
 
     const page = await browserContext.newPage();
 
-    executionContext = vm.createContext({
+    const aborter = new AbortController();
+    executionContext = createVMContext({
       require,
       fetch,
       browser,
       context: browserContext,
       console,
       page,
-      DESTROY: true,
+      _abortSignal: aborter.signal,
+      _abortController: aborter,
+      _registerAborter: registerAborter,
     });
 
-    const aborter = new AbortController();
-    executionContext.aborter = aborter;
-    let aborted = false;
-    aborter.signal.addEventListener("abort", () => {
-      console.log('top-level abort event');
-      aborted = true;
-      throw new Error('top-level abort');
-    });
-    await executeAllCommands(executionContext, SETUP_SCRIPT, aborter);
+    try {
+      await executeAllCommands(executionContext, SETUP_SCRIPT);
+    } catch (err) {
+      console.error("Unable to start ServerOperationService. Error:");
+      console.error(err);
+      throw err;
+    }
 
-    const serverContext: OperationServerContext = {
+    return new ServerOperationService({
       sender,
       logger,
       browser,
       browserContext,
+      page,
       executionContext,
       inspector,
-    }
-    return new ServerOperationService(serverContext);
+      aborter,
+    });
   }
 
   resetContext() {
-    this.executionContext = vm.createContext({
+    this.resetAborter();
+    this.executionContext = createVMContext({
       require,
       fetch,
       browser: this.browser,
       context: this.browserContext,
-      page,
+      page: this.page,
+      _abortSignal: this.aborter.signal,
+      _abortController: this.aborter,
+      console,
+      _registerAborter: registerAborter,
     });
     return this.executionContext;
   }
 
+  resetAborter() {
+    this.aborter = new AbortController();
+    this.executionContext._abortSignal = this.aborter.signal;
+  }
+
   async executeWorkflow(workflow: string, range?: ExecutionRange, resetContext?: boolean) {
-    if (!this.executionContext) return;
+    if (!this.executionContext) {
+      throw new Error("Execution context is not set up");
+    }
 
     if (resetContext) {
       this.resetContext();
+    } else {
+      this.resetAborter();
     }
 
     const { statements, displacement } = parseCommands(
@@ -258,40 +294,33 @@ class ServerOperationService {
           ? `${startLine} - ${endLine}`
           : `${startLine}`
 
-
         this.logger.log(`${lineLabel}: ${escodegen.generate(statement)}`);
 
-        const aborter = new AbortController();
-        this.executionContext.aborter = aborter;
-
-        await executeCommand(this.executionContext, statement, aborter);
+        await executeCommand(this.executionContext, statement);
         for (let i = startLine; i <= endLine; i++) {
           if (i !== endLine || nextStartLine !== endLine) {
             blockStatus[`${i}`] = "success";
           }
-        }
-
-        if (index === statements.length - 1) {
-          executionStatus = "success";
-          sendStatus();
         }
       } catch (error) {
         this.logger.error(error);
         blockStatus[`${startLine}`] = "error";
         executionStatus = "error";
         sendStatus();
-        break;
+        return;
       }
     }
+
+    executionStatus = "success";
+    sendStatus();
   }
 
   setInspecting(inspect: boolean) {
     this.inspector.setInspecting(inspect);
   }
 
-  close() {
-    const aborter = new AbortController();
-    this.executionContext.aborter = aborter;
-    return executeAllCommands(this.executionContext, "await browser.close()", aborter);
+  async close() {
+    this.resetAborter();
+    await executeAllCommands(this.executionContext, "await browser.close()");
   }
 }
