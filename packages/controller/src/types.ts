@@ -1,5 +1,5 @@
 import net from "net";
-import { MessageSender } from "./utils";
+import { TCPMessageSender } from "./utils";
 
 export interface WorkflowTemplate {
   wrapper: string[];
@@ -29,6 +29,7 @@ export type SelectedElementOptions = {
   ariaSnapshot: string,
 }
 
+/** Messages sent from the server via TCP */
 export type ServerOperation = {
   opCode: 1;
   data: "authenticated";
@@ -59,6 +60,7 @@ export type ServerOperation = {
   data: "context-reset";
 }
 
+/** Messages sent from the client via TCP */
 export type ClientOperation = {
   opCode: 1;
   data: {
@@ -86,5 +88,5 @@ export type ClientOperation = {
 
 export type SocketConnection = {
   socket: net.Socket,
-  sender: MessageSender,
+  sender: TCPMessageSender,
 }

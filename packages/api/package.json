@@ -1,0 +1,25 @@
+{
+  "name": "@cloudydaiyz/furu-api",
+  "description": "API for the furu project",
+  "version": "1.0.0",
+  "author": "Kylan Duncan",
+  "keywords": [
+    "furu",
+    "playwright"
+  ],
+  "license": "ISC",
+  "scripts": {
+    "build": "tsc"
+  },
+  "packageManager": "pnpm@10.12.3",
+  "dependencies": {
+    "typescript": "^5.9.3"
+  },
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  }
+}

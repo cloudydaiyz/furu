@@ -1,3 +1,3 @@
-export { runClient, sendSampleCommand as getSampleCommand, launchLocalServer as launchServer } from "./client";
+export { runClient, sendSampleCommand, launchLocalServer } from "./client";
 export { runServer } from "./server";
 export * from "./types";

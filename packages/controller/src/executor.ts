@@ -6,10 +6,10 @@ import { processTopLevelAwait } from './vendor/node/await';
 import { BlockExecutionStatus, ExecutionRange, ExecutionStatus, WorkflowTemplate, WorkflowTemplateDisplacement } from "./types";
 import { Browser, BrowserContext, Page, chromium } from "playwright";
 import { BrowserContextInspector } from "./inspector";
-import { MessageSender, ServerConsole } from "./utils";
+import { TCPMessageSender, ServerConsole } from "./utils";
 
 export interface WorkflowExecutionContext {
-  sender: MessageSender;
+  sender: TCPMessageSender;
   logger: ServerConsole;
   browser: Browser;
   browserContext: BrowserContext;
@@ -139,7 +139,7 @@ export async function executeAllCommands(
 }
 
 export class WorkflowExecutor {
-  private sender!: MessageSender;
+  private sender!: TCPMessageSender;
   private logger!: ServerConsole;
   private browser!: Browser;
   private browserContext!: BrowserContext;
@@ -152,7 +152,7 @@ export class WorkflowExecutor {
     Object.assign(this, params);
   }
 
-  static async create(sender: MessageSender) {
+  static async create(sender: TCPMessageSender) {
     const logger = new ServerConsole(sender);
 
     let browser: Browser;

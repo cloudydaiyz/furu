@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs/promises";
 import { ClientOperation, ExecutionRange, ServerOperation, SocketConnection } from "./types";
 import { DEFAULT_OPERATION_SERVER_PORT } from "./server";
-import { BUFFER_DELIMITER, MessageBuffer, MessageSender, DEFAULT_ACCESS_KEY } from "./utils";
+import { BUFFER_DELIMITER, MessageBuffer, TCPMessageSender, DEFAULT_ACCESS_KEY } from "./utils";
 import { spawn } from "child_process";
 
 const MAX_AUTH_RETRIES = 0;
@@ -17,7 +17,7 @@ export interface ControllerClientOptions {
   maxAuthRetries?: number,
 }
 
-export async function sendSampleCommand(sender: MessageSender, title: string, range?: ExecutionRange) {
+export async function sendSampleCommand(sender: TCPMessageSender, title: string, range?: ExecutionRange) {
   const sourcePath = path.join(__dirname, "..", "examples", "workflows", `${title}.mjs`);
   const workflow = await fs.readFile(sourcePath, "utf-8");
   const operation: ClientOperation = {
@@ -32,7 +32,6 @@ export async function sendSampleCommand(sender: MessageSender, title: string, ra
 
 export function launchLocalServer(accessKey = DEFAULT_ACCESS_KEY) {
   const serverFile = path.join(__dirname, "start.js");
-  console.log(serverFile);
 
   const child = spawn(process.argv[0], [serverFile], {
     env: { ACCESS_KEY: accessKey },
@@ -60,7 +59,7 @@ function connectToServer({
   onServerOperation,
   maxAuthRetries = MAX_AUTH_RETRIES,
 }: ControllerClientOptions): SocketConnection {
-  let sender: MessageSender;
+  let sender: TCPMessageSender;
 
   const socket = net.createConnection(
     { port, host },
@@ -128,7 +127,7 @@ function connectToServer({
     }
   );
 
-  sender = new MessageSender(socket, BUFFER_DELIMITER);
+  sender = new TCPMessageSender(socket, BUFFER_DELIMITER);
   sender.sendClientOperation({
     opCode: 1,
     data: { accessKey: DEFAULT_ACCESS_KEY }
@@ -137,7 +136,7 @@ function connectToServer({
   return { socket, sender };
 }
 
-export async function runClient(opts: ControllerClientOptions = {}) {
+export async function runClient(opts: ControllerClientOptions = {}): Promise<SocketConnection> {
   const {
     accessKey = DEFAULT_ACCESS_KEY,
     launchServer
@@ -154,5 +153,6 @@ export async function runClient(opts: ControllerClientOptions = {}) {
     });
     return socket;
   }
+
   return connectToServer(opts);
 }

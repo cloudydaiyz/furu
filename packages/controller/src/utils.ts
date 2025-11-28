@@ -61,7 +61,7 @@ export function sliceUint8(arr: Uint8Array, start?: number, end?: number) {
   return sliced;
 }
 
-export class MessageSender {
+export class TCPMessageSender {
   receiver: net.Socket;
   delimiter: string;
 
@@ -114,9 +114,9 @@ export class MessageBuffer {
 }
 
 export class ServerConsole extends Console {
-  sender: MessageSender;
+  sender: TCPMessageSender;
 
-  constructor(sender: MessageSender) {
+  constructor(sender: TCPMessageSender) {
     super({ stdout: process.stdout });
     this.sender = sender;
   }

@@ -1,17 +1,19 @@
 {
   "name": "@cloudydaiyz/furu-controller",
+  "description": "Playwright controller for the furu project",
   "version": "1.0.0",
-  "main": "index.js",
+  "author": "Kylan Duncan",
+  "keywords": [
+    "furu",
+    "playwright"
+  ],
+  "license": "ISC",
   "scripts": {
     "build": "tsc && node scripts/generate-injected.mjs",
     "inspector": "npm run build && node dist/sandbox/inspector.js",
     "executor": "npm run build && node --experimental-repl-await --experimental-vm-modules dist/sandbox/executor.js",
     "start": "npm run build && node dist/start.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "devDependencies": {
     "@types/escodegen": "^0.0.10",
     "@types/esprima": "^4.0.6",
@@ -31,6 +33,7 @@
     "web-vitals": "^5.1.0",
     "yaml": "^2.8.1"
   },
+  "main": "./dist/index.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

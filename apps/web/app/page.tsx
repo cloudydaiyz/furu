@@ -4,14 +4,25 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { socket } from "./socket";
 import { API_URL } from "@/lib/constants";
+import { ApiClientOperation, ApiServerOperation, DEFAULT_ACCESS_KEY } from "@cloudydaiyz/furu-api";
 
 export default function Home() {
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [fooEvents, setFooEvents] = useState<any[]>([]);
 
   useEffect(() => {
+
+    const sendClientOperation = (operation: ApiClientOperation) =>
+      socket.send("operation", operation);
+
     function onConnect() {
       setIsConnected(true);
+      sendClientOperation({
+        opCode: 1,
+        data: {
+          accessKey: DEFAULT_ACCESS_KEY,
+        }
+      })
     }
 
     function onDisconnect() {
@@ -26,7 +37,11 @@ export default function Home() {
     socket.on('disconnect', onDisconnect);
     socket.on('foo', onFooEvent);
 
-    fetch(API_URL).then(res => console.log(`fetched from server with status ${res.status}`))
+    socket.on("operation", (data: ApiServerOperation) => {
+      console.log(data);
+    });
+
+    // fetch(API_URL).then(res => console.log(`fetched from server with status ${res.status}`));
 
     return () => {
       socket.off('connect', onConnect);
@@ -36,6 +51,7 @@ export default function Home() {
   }, []);
 
   console.log('isConnected', isConnected);
+  console.log('fooEvents', fooEvents);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
@@ -87,7 +103,7 @@ export default function Home() {
             Deploy Now
           </a>
           <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
+            className="flex h-12 w-full items-center justify-center rounded-full border border-solid px-5 transition-colors hover:border-transparent hover:bg-black/4 dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
             href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
             target="_blank"
             rel="noopener noreferrer"

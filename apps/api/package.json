@@ -1,19 +1,18 @@
 {
-  "name": "@cloudydaiyz/furu-app-api",
+  "name": "@cloudydaiyz/furu-api-app",
   "private": true,
   "version": "0.0.0",
-  "main": "index.js",
   "type": "module",
+  "author": "Kylan Duncan",
+  "license": "ISC",
+  "repository": "https://github.com/cloudydaiyz/furu",
   "scripts": {
     "build": "tsc",
     "start": "tsc && node dist/index.js"
   },
-  "author": "Kylan Duncan",
-  "license": "ISC",
-  "description": "",
-  "repository": "https://github.com/cloudydaiyz/furu",
   "dependencies": {
-    "@cloudydaiyz/furu-controller": "link:../../packages/controller",
+    "@cloudydaiyz/furu-api": "workspace:../../packages/api",
+    "@cloudydaiyz/furu-controller": "workspace:../../packages/controller",
     "bullmq": "^5.63.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

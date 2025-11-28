@@ -1,7 +1,7 @@
 import net from "net";
 import { WorkflowExecutor } from "./executor";
 import { ClientOperation } from "./types";
-import { DEFAULT_ACCESS_KEY, BUFFER_DELIMITER, MessageBuffer, MessageSender } from "./utils";
+import { DEFAULT_ACCESS_KEY, BUFFER_DELIMITER, MessageBuffer, TCPMessageSender } from "./utils";
 
 export const DEFAULT_OPERATION_SERVER_PORT = 8124;
 
@@ -19,7 +19,7 @@ export function runServer({
   const operationServer = net.createServer(async (connection) => {
     console.log(`client connected`, connection.address());
 
-    const sender = new MessageSender(connection, BUFFER_DELIMITER);
+    const sender = new TCPMessageSender(connection, BUFFER_DELIMITER);
     const buffer = new MessageBuffer(BUFFER_DELIMITER);
 
     let service: WorkflowExecutor | undefined = undefined;
@@ -47,8 +47,8 @@ export function runServer({
                 if (operation.data.accessKey === accessKey) {
                   try {
                     service = await WorkflowExecutor.create(sender);
-
                     authenticated = true;
+
                     sender.sendServerOperation({
                       opCode: 1,
                       data: "authenticated"
@@ -122,4 +122,5 @@ export function runServer({
   });
 
   process.send?.("ready");
+  return operationServer;
 }
