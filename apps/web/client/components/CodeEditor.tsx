@@ -7,13 +7,12 @@ import { oneDark } from '@codemirror/theme-one-dark';
 import { basicSetup } from 'codemirror';
 import React, { memo, RefObject, useEffect, useRef } from 'react';
 import "./CodeEditor.css";
-import { breakpointGutter, editable, emptyLineGutter, getBreakpointState, lineStatusGutter, readOnly, updateLineStatusGutter } from './gutter';
-import { LineExecutionStatus } from '@cloudydaiyz/furu-api';
+import { editable, readOnly, lineStatusGutter } from './gutter';
 
 type EditorProps = {
   editorRef: RefObject<EditorView | null>,
   content: string;
-  onSaveContent: (updatedContent: string, debounce: boolean) => void;
+  onSaveContent?: (updatedContent: string, debounce: boolean) => void;
   isCurrentVersion: boolean;
   currentVersionIndex: number;
 };
@@ -33,10 +32,6 @@ function PureCodeEditor({ editorRef, content, onSaveContent }: EditorProps) {
       });
 
       const fixedSizeTheme = EditorView.theme({
-        ".cm-editor": {
-          height: "400px",
-          width: "600px"
-        },
         ".cm-scroller": {
           overflow: "auto"
         }
@@ -57,8 +52,6 @@ function PureCodeEditor({ editorRef, content, onSaveContent }: EditorProps) {
         editorRef.current = null;
       }
     };
-    // NOTE: we only want to run this effect once
-    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
@@ -71,7 +64,7 @@ function PureCodeEditor({ editorRef, content, onSaveContent }: EditorProps) {
 
           if (transaction) {
             const newContent = update.state.doc.toString();
-            onSaveContent(newContent, true);
+            onSaveContent?.(newContent, true);
           }
         }
       });
@@ -83,7 +76,6 @@ function PureCodeEditor({ editorRef, content, onSaveContent }: EditorProps) {
         extensions: [
           lineStatusGutter,
           basicSetup,
-          emptyLineGutter,
           javascript(),
           oneDark,
           updateListener,
@@ -100,24 +92,6 @@ function PureCodeEditor({ editorRef, content, onSaveContent }: EditorProps) {
   useEffect(() => {
     if (editorRef.current && content) {
       const currentContent = editorRef.current.state.doc.toString();
-
-      const view = editorRef.current;
-      if (view) {
-        console.log(view);
-        // console.log("getBreakpointState", getBreakpointState(view));
-        console.log("view.state.doc.line(0)", view.state.doc.line(1));
-        console.log("view.state.doc.lines", view.state.doc.lines);
-
-        if (view.state.doc.lines > 5) {
-          console.log("view.state.doc.line(0) 2", view.state.doc.line(1));
-          updateLineStatusGutter(view, {
-            '1': 'success',
-            '2': 'pending',
-            '3': 'error',
-          })
-        }
-      }
-
       if (currentContent !== content) {
         const transaction = editorRef.current.state.update({
           changes: {
@@ -136,8 +110,6 @@ function PureCodeEditor({ editorRef, content, onSaveContent }: EditorProps) {
   return (
     <div
       className="relative not-prose w-full h-full text-sm"
-      style={{
-      }}
       ref={containerRef}
     />
   );

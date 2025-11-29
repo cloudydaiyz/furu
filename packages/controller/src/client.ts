@@ -95,15 +95,6 @@ function connectToServer({
               }
               break;
             case 3:
-              if (operation.data.status === "success") {
-                // serverSocket.end();
-                sender.sendClientOperation({
-                  opCode: 4,
-                  data: {
-                    inspect: true,
-                  }
-                });
-              }
               break;
             case 4:
               break;

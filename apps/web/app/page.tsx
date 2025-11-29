@@ -1,71 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
-import { socket } from "../client/socket";
-// import { API_URL } from "@/lib/constants";
 import { todoMvc } from "@/lib/workflows/todo-mvc";
-import { ApiClientOperation, ApiServerOperation, DEFAULT_ACCESS_KEY } from "@cloudydaiyz/furu-api";
+import { socket, useOperations } from "@/client/hooks/useOperations";
+import { useState } from "react";
 
 export default function Home() {
-  const [isConnected, setIsConnected] = useState(socket.connected);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [fooEvents, setFooEvents] = useState<any[]>([]);
-
-  const sendClientOperation = (operation: ApiClientOperation) =>
-    socket.emit("operation", operation);
-
-  function onConnect() {
-    console.log("sending access key");
-    setIsConnected(true);
-    sendClientOperation({
-      opCode: 1,
-      data: {
-        accessKey: DEFAULT_ACCESS_KEY,
-      }
-    });
-  }
-
-  function onDisconnect() {
-    setIsConnected(false);
-    setIsAuthenticated(false);
-  }
-
-  function onFooEvent(value: any) {
-    setFooEvents(previous => [...previous, value]);
-  }
-
-  useEffect(() => {
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-    socket.on('foo', onFooEvent);
-
-    socket.on("operation", (operation: ApiServerOperation) => {
-      console.log("operation", operation);
-      if (operation.opCode === 1) {
-        setIsAuthenticated(true);
-      }
-    });
-
-    // fetch(API_URL).then(res => console.log(`fetched from server with status ${res.status}`));
-
-    return () => {
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.off('foo', onFooEvent);
-    };
-  }, []);
-
-  useEffect(() => {
-    console.log('socket.connected 2', socket.connected);
-    if (!isConnected) {
-      onConnect();
-    }
-  }, [socket.connected])
+  const {
+    isConnected,
+    isAuthenticated,
+    sendClientOperation,
+  } = useOperations({});
 
   console.log('socket.connected', socket.connected);
   console.log('isConnected', isConnected);
-  console.log('fooEvents', fooEvents);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">

@@ -26,6 +26,7 @@ interface VMContext {
   context: BrowserContext;
   console: typeof console;
   page: Page;
+  setTimeout: typeof setTimeout;
 }
 
 export const SETUP_SCRIPT = [
@@ -199,6 +200,7 @@ export class WorkflowExecutor {
       context: browserContext,
       console,
       page,
+      setTimeout,
     });
 
     const aborter = new AbortController();
@@ -231,6 +233,7 @@ export class WorkflowExecutor {
       context: this.browserContext,
       page: this.page,
       console,
+      setTimeout,
     });
     this.sender.sendServerOperation({
       opCode: 6,

@@ -4,7 +4,14 @@ export type BlockExecutionStatus = {
   [line: `${number}`]: LineExecutionStatus;
 }
 
+/** TODO: Change 'stopped' to 'idle' */
 export type ExecutionStatus = "running" | "stopped" | "success" | "error";
+
+/** TODO: Change name to ExecutionStatus and remove previous Execution Status */
+export type FullExecutionStatus = {
+  lines: BlockExecutionStatus,
+  status: ExecutionStatus;
+}
 
 export type ExecutionRange = {
   start?: number;
@@ -14,6 +21,13 @@ export type ExecutionRange = {
 export type SelectedElementOptions = {
   locators: string[],
   ariaSnapshot: string,
+}
+
+export type LogEntry = {
+  timestamp: number;
+  origin: string;
+  severity: number;
+  message: string;
 }
 
 /** Messages sent from the client via Websocket */
@@ -56,18 +70,10 @@ export type ApiServerOperation = {
   data: "controller-available" | "controller-unavailable",
 } | {
   opCode: 4;
-  data: {
-    lines: BlockExecutionStatus,
-    status: ExecutionStatus;
-  }
+  data: FullExecutionStatus;
 } | {
   opCode: 5;
-  data: {
-    timestamp: number;
-    origin: string;
-    severity: number;
-    message: string;
-  }
+  data: LogEntry;
 } | {
   opCode: 6;
   data: SelectedElementOptions;
