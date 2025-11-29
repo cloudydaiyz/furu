@@ -2,43 +2,49 @@
 
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { socket } from "./socket";
-import { API_URL } from "@/lib/constants";
+import { socket } from "../client/socket";
+// import { API_URL } from "@/lib/constants";
+import { todoMvc } from "@/lib/workflows/todo-mvc";
 import { ApiClientOperation, ApiServerOperation, DEFAULT_ACCESS_KEY } from "@cloudydaiyz/furu-api";
 
 export default function Home() {
   const [isConnected, setIsConnected] = useState(socket.connected);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [fooEvents, setFooEvents] = useState<any[]>([]);
 
+  const sendClientOperation = (operation: ApiClientOperation) =>
+    socket.emit("operation", operation);
+
+  function onConnect() {
+    console.log("sending access key");
+    setIsConnected(true);
+    sendClientOperation({
+      opCode: 1,
+      data: {
+        accessKey: DEFAULT_ACCESS_KEY,
+      }
+    });
+  }
+
+  function onDisconnect() {
+    setIsConnected(false);
+    setIsAuthenticated(false);
+  }
+
+  function onFooEvent(value: any) {
+    setFooEvents(previous => [...previous, value]);
+  }
+
   useEffect(() => {
-
-    const sendClientOperation = (operation: ApiClientOperation) =>
-      socket.send("operation", operation);
-
-    function onConnect() {
-      setIsConnected(true);
-      sendClientOperation({
-        opCode: 1,
-        data: {
-          accessKey: DEFAULT_ACCESS_KEY,
-        }
-      })
-    }
-
-    function onDisconnect() {
-      setIsConnected(false);
-    }
-
-    function onFooEvent(value: any) {
-      setFooEvents(previous => [...previous, value]);
-    }
-
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('foo', onFooEvent);
 
-    socket.on("operation", (data: ApiServerOperation) => {
-      console.log(data);
+    socket.on("operation", (operation: ApiServerOperation) => {
+      console.log("operation", operation);
+      if (operation.opCode === 1) {
+        setIsAuthenticated(true);
+      }
     });
 
     // fetch(API_URL).then(res => console.log(`fetched from server with status ${res.status}`));
@@ -50,6 +56,14 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    console.log('socket.connected 2', socket.connected);
+    if (!isConnected) {
+      onConnect();
+    }
+  }, [socket.connected])
+
+  console.log('socket.connected', socket.connected);
   console.log('isConnected', isConnected);
   console.log('fooEvents', fooEvents);
 
@@ -110,6 +124,23 @@ export default function Home() {
           >
             Documentation
           </a>
+          <button
+            type="button"
+            className="flex h-12 w-full items-center justify-center rounded-full border border-solid px-5 transition-colors hover:border-transparent hover:bg-black/4 dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
+            onClick={() => {
+              if (isAuthenticated) {
+                sendClientOperation({
+                  opCode: 2,
+                  data: {
+                    workflow: todoMvc,
+                  }
+                });
+              }
+            }}
+            disabled={!isAuthenticated}
+          >
+            Send command
+          </button>
         </div>
       </main>
     </div>

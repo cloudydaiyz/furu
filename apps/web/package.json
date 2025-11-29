@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "@cloudydaiyz/furu-web-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,13 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@cloudydaiyz/furu-api": "workspace:../../packages/api",
+    "@cloudydaiyz/furu-api": "workspace:*",
+    "@codemirror/lang-javascript": "^6.2.4",
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/theme-one-dark": "^6.1.3",
+    "@codemirror/view": "^6.38.8",
+    "codemirror": "^6.0.2",
     "next": "16.0.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",

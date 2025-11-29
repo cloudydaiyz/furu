@@ -4,7 +4,7 @@ import express from "express";
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { runServer, runClient, sendSampleCommand } from '@cloudydaiyz/furu-controller';
+import { runServer, runClient, sendSampleCommand, TCPMessageSender, type ClientOperation } from '@cloudydaiyz/furu-controller';
 import { DEFAULT_ACCESS_KEY, type ApiClientOperation, type ApiServerOperation } from '@cloudydaiyz/furu-api';
 
 const port = 4000;
@@ -39,9 +39,13 @@ async function launchApi() {
 
     let authenticated = false;
     let controllerLaunched = false;
+    let controllerSender: TCPMessageSender;
 
-    const sendServerOperation = (operation: ApiServerOperation) =>
-      socket.send("operation", operation);
+    const sendApiServerOperation = (operation: ApiServerOperation) =>
+      socket.emit("operation", operation);
+
+    const sendControllerClientOperation = (operation: ClientOperation) =>
+      controllerSender.sendClientOperation(operation);
 
     const verifyClientAccessKey = async (clientKey: string) => {
       if (clientKey === apiAccessKey) {
@@ -52,12 +56,51 @@ async function launchApi() {
 
     const launchController = async () => {
       runServer({ accessKey: controllerAccessKey });
-      await runClient({ accessKey: controllerAccessKey });
+      const { sender } = await runClient({
+        accessKey: controllerAccessKey,
+        onServerOperation: async (operation) => {
+          switch (operation.opCode) {
+            case 1:
+              break;
+            case 2:
+              break;
+            case 3:
+              sendApiServerOperation({
+                opCode: 4,
+                data: operation.data,
+              });
+              break;
+            case 4:
+              sendApiServerOperation({
+                opCode: 5,
+                data: operation.data,
+              });
+              break;
+            case 5:
+              sendApiServerOperation({
+                opCode: 6,
+                data: operation.data,
+              });
+              break;
+            case 6:
+              sendApiServerOperation({
+                opCode: 7,
+                data: operation.data,
+              });
+              break;
+            default:
+              break;
+          }
+        }
+      });
+      controllerSender = sender;
     }
 
     socket.on("operation", async (operation: ApiClientOperation) => {
+      console.log("operation", operation);
+
       if (operation.opCode !== 1 && !authenticated) {
-        sendServerOperation({
+        sendApiServerOperation({
           opCode: 2,
           data: {
             error: "unauthenticated"
@@ -74,7 +117,7 @@ async function launchApi() {
               if (await verifyClientAccessKey(clientKey)) {
                 authenticated = true;
               } else {
-                sendServerOperation({
+                sendApiServerOperation({
                   opCode: 2,
                   data: {
                     error: "auth-invalid",
@@ -84,7 +127,7 @@ async function launchApi() {
               }
             } catch (error) {
               console.error(error);
-              sendServerOperation({
+              sendApiServerOperation({
                 opCode: 2,
                 data: {
                   error: "auth-error"
@@ -94,7 +137,7 @@ async function launchApi() {
             }
           }
 
-          sendServerOperation({
+          sendApiServerOperation({
             opCode: 1,
             data: "authenticated",
           });
@@ -104,21 +147,27 @@ async function launchApi() {
             controllerLaunched = true;
           }
 
-          sendServerOperation({
+          sendApiServerOperation({
             opCode: 3,
             data: "controller-available",
           });
 
           break;
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+          sendControllerClientOperation(operation);
+          break;
         default:
           break;
       }
     });
+
     socket.emit("foo", "Welcome!");
     socket.on('disconnect', () => {
       console.log('user disconnected');
     });
-    setTimeout(() => socket.disconnect(), 3000);
   });
 
   httpServer.listen(port, () => {

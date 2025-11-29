@@ -1,0 +1,15 @@
+.cm-wrap {
+  height: 100%
+}
+
+.cm-scroller {
+  overflow: auto
+}
+
+.cm-editor {
+  height: 100%;
+}
+
+.cm-content {
+  margin-bottom: 80px !important;
+}
