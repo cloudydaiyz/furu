@@ -16,7 +16,6 @@ export interface WorkflowExecutionContext {
   page: Page;
   executionContext: vm.Context;
   inspector: BrowserContextInspector;
-  aborter: AbortController;
 }
 
 interface VMContext {
@@ -30,12 +29,8 @@ interface VMContext {
 }
 
 export const SETUP_SCRIPT = [
-  // 'const { chromium } = require("playwright");',
-  'const { test, expect, Locator } = require("@playwright/test");',
+  'const { test, expect } = require("@playwright/test");',
   'const { injectAxe, checkA11y, getAxeResults } = require("axe-playwright")',
-  // "const browser = await chromium.launch({ headless: false });",
-  // "const context = await browser.newContext();",
-  // "const page = await context.newPage();",
 ].join('\n');
 
 export const WORKFLOW_SCRIPT_TEMPLATE: WorkflowTemplate = {
@@ -151,6 +146,7 @@ export class WorkflowExecutor {
 
   private constructor(params: WorkflowExecutionContext) {
     Object.assign(this, params);
+    this.resetAborter();
   }
 
   static async create(sender: TCPMessageSender) {
@@ -203,7 +199,6 @@ export class WorkflowExecutor {
       setTimeout,
     });
 
-    const aborter = new AbortController();
     try {
       await executeAllCommands(executionContext, SETUP_SCRIPT);
     } catch (err) {
@@ -220,11 +215,10 @@ export class WorkflowExecutor {
       page,
       executionContext,
       inspector,
-      aborter,
     });
   }
 
-  resetContext() {
+  async resetContext() {
     this.resetAborter();
     this.executionContext = createVMContext({
       require,
@@ -235,6 +229,15 @@ export class WorkflowExecutor {
       console,
       setTimeout,
     });
+
+    try {
+      await executeAllCommands(this.executionContext, SETUP_SCRIPT);
+    } catch (err) {
+      console.error("Unable to start ServerOperationService. Error:");
+      console.error(err);
+      throw err;
+    }
+
     this.sender.sendServerOperation({
       opCode: 6,
       data: "context-reset",
@@ -257,7 +260,7 @@ export class WorkflowExecutor {
     }
 
     if (resetContext) {
-      this.resetContext();
+      await this.resetContext();
     } else {
       this.resetAborter();
     }

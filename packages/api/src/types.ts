@@ -1,3 +1,7 @@
+import { SELECTED_ELEMENT_ACTIONS } from "./constants";
+
+export type SelectedElementAction = typeof SELECTED_ELEMENT_ACTIONS[number];
+
 export type LineExecutionStatus = "pending" | "success" | "error";
 
 export type BlockExecutionStatus = {
