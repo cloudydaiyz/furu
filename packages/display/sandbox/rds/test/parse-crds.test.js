@@ -118,7 +118,6 @@ const output1 = {
             "CurrentInstanceBootMode": "legacy-bios"
         }
     ],
-    "OwnerId": "471112798654",
     "ReservationId": "r-07b434e0ac1118d21"
 };
 
@@ -263,7 +262,6 @@ const output2 = {
                     "CurrentInstanceBootMode": "legacy-bios"
                 }
             ],
-            "OwnerId": "471112798654",
             "ReservationId": "r-07b434e0ac1118d21"
         }
     ]
