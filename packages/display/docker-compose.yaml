@@ -1,0 +1,68 @@
+# DO NOT USE -- docker compose did NOT work for me
+# FUTURE: Debug this script
+
+services:
+  guacamole:
+    image: guacamole/guacamole:1.5.3
+    container_name: guacamole
+    depends_on:
+      - guacamole-guacd
+      - guacamole-db
+    # security_opt:
+    #   - label:disable
+    volumes:
+      - ./container-data/extensions:/guacamole-home/extensions
+      - ./container-data/guacamole-home:/guacamole-home
+      - ./container-data/guacamole-home/guacamole.properties:/guacamole-home/guacamole.properties
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - GUACAMOLE_LOG_LEVEL=DEBUG
+      - GUACAMOLE_HOME=/guacamole-home
+      - GUACD_HOSTNAME=guacamole-guacd
+      - POSTGRESQL_DATABASE=guacamole_db
+      - POSTGRESQL_DB=guacamole_db
+      - POSTGRESQL_USER=guacamole
+      - POSTGRESQL_HOSTNAME=guacamole-db
+      # - POSTGRESQL_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRESQL_PASSWORD=helloworld
+    ports:
+      - 8080:8080
+    # restart: always
+    networks:
+      - guacamole-nw
+
+  guacamole-guacd:
+    image: guacamole/guacd:1.5.3
+    container_name: guacamole-guacd
+    # security_opt:
+    #   - label:disable
+    networks:
+      - guacamole-nw
+    # restart: always
+    volumes:
+      - ./container-data/records:/record
+      - ./container-data/drive:/drive
+      - /etc/localtime:/etc/localtime:ro
+
+  guacamole-db:
+    image: postgres:15
+    container_name: guacamole-db
+    # security_opt:
+    #   - label:disable
+    # restart: always
+    environment:
+      - POSTGRES_DB=guacamole_db
+      - POSTGRES_USER=guacamole
+      - POSTGRES_PASSWORD=helloworld
+    volumes:
+      - ./container-data/db:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
+      # - ./initdb.sql:/docker-entrypoint-initdb.d/initdb.sql # can be removed after initialization
+    networks:
+      - guacamole-nw
+    ports:
+      - "5432:5432"
+
+networks:
+  guacamole-nw:
+    driver: bridge

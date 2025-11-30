@@ -1,11 +1,11 @@
 "use client";
 
 import { CodeEditor } from "@/client/components/CodeEditor";
-import { clearLineStatusGutter, freezeEditor, getCodeFromEditor, updateLineStatusGutter } from "@/client/components/gutter";
+import { clearLineStatusGutter, getCodeFromEditor, updateLineStatusGutter } from "@/client/components/gutter";
 import { useOperations } from "@/client/hooks/useOperations";
 import { cn, getSelectedElementCommand, getSelectedActionLabel } from "@/lib/util";
 import { todoMvc } from "@/lib/workflows/todo-mvc";
-import { BlockExecutionStatus, ExecutionRange, ExecutionStatus, FullExecutionStatus, LogEntry, SELECTED_ELEMENT_ACTIONS, SelectedElementAction, SelectedElementOptions } from "@cloudydaiyz/furu-api";
+import { ExecutionRange, ExecutionStatus, LogEntry, SELECTED_ELEMENT_ACTIONS, SelectedElementAction, SelectedElementOptions } from "@cloudydaiyz/furu-api";
 import { EditorView } from "@codemirror/view";
 import { useEffect, useRef, useState } from "react";
 
@@ -17,14 +17,17 @@ const dfmt = new Intl.DateTimeFormat("en", {
   hour12: false,
 });
 
-const MAX_LOG_ENTRIES = 20;
+// const MAX_LOG_ENTRIES = 40;
+const MAX_LOG_ENTRIES = undefined;
 
-interface EditorConsoleProps {
+type WorkflowEditorTab = "logs" | "elements";
+
+interface ConsoleLogTabProps {
   ref: React.RefObject<HTMLDivElement | null>,
   logEntries: LogEntry[],
 }
 
-function EditorConsole({ ref, logEntries }: EditorConsoleProps) {
+function ConsoleLogTab({ ref, logEntries }: ConsoleLogTabProps) {
   return (
     <div
       ref={ref}
@@ -59,10 +62,153 @@ function EditorConsole({ ref, logEntries }: EditorConsoleProps) {
         </tbody>
       </table>
     </div>
-  )
+  );
 }
 
-type EditorTab = "logs" | "elements";
+interface InspectElementTabProps {
+  selectedElement: SelectedElementOptions | null
+  setSelectedElement: (element: SelectedElementOptions | null) => void;
+  selectActionRef: React.RefObject<HTMLSelectElement | null>;
+  selectedAction: SelectedElementAction | null;
+  setSelectedAction: (action: SelectedElementAction | null) => void;
+  selectLocatorRef: React.RefObject<HTMLSelectElement | null>;
+  selectedLocator: string | null;
+  setSelectedLocator: (locator: string | null) => void;
+  selectedElementCommand: string | null;
+  copyBtnRef: React.RefObject<HTMLButtonElement | null>;
+  lastCopiedRef: React.RefObject<number>;
+}
+
+function InspectElementTab({
+  selectedElement,
+  setSelectedElement,
+  selectActionRef,
+  selectedAction,
+  setSelectedAction,
+  selectLocatorRef,
+  selectedLocator,
+  setSelectedLocator,
+  selectedElementCommand,
+  copyBtnRef,
+  lastCopiedRef,
+}: InspectElementTabProps) {
+  return (
+    <div
+      className="w-full h-full py-4 px-8 bg-stone-400 flex flex-col"
+    >
+      <>
+        <div className="flex items-center gap-4 mb-4">
+          <h4 className="font-semibold">
+            {selectedElement ? "Element selected" : "No element selected"}
+          </h4>
+          <button
+            type="button"
+            className={cn("w-fit h-fit px-2 py-1 rounded-md bg-stone-700 hover:bg-stone-800", !selectedElement && "invisible")}
+            onClick={() => setSelectedElement(null)}
+          >
+            Deselect
+          </button>
+        </div>
+        {
+          selectedElement ? (
+            <>
+              <div className="flex items-center gap-4 mb-2">
+                <label htmlFor="action-select" className="w-16">Action</label>
+                <select
+                  ref={selectActionRef}
+                  id="action-select"
+                  name="action-select"
+                  className="bg-black/20 rounded-md py-1 px-2 w-40"
+                  onInput={(e) => {
+                    const value = e.currentTarget.value;
+                    setSelectedAction(value === "null" ? null : value as SelectedElementAction);
+                  }}
+                >
+                  <option value="null">
+                    Select an action
+                  </option>
+                  {
+                    SELECTED_ELEMENT_ACTIONS.map((action) => (
+                      <option key={action} value={action}>
+                        {getSelectedActionLabel(action)}
+                      </option>
+                    ))
+                  }
+                </select>
+              </div>
+              <div className="flex items-center gap-4 mb-4">
+                <label htmlFor="locator-select" className="w-16">Locator</label>
+                <select
+                  ref={selectLocatorRef}
+                  id="locator-select"
+                  name="locator-select"
+                  className="bg-black/20 rounded-md py-1 px-2 w-100"
+                  onInput={(e) => {
+                    const value = e.currentTarget.value;
+                    setSelectedLocator(value === "null" ? null : value);
+                  }}
+                >
+                  <option value="null">
+                    Select a locator
+                  </option>
+                  {
+                    selectedElement.locators.map((locator) => (
+                      <option key={locator} value={locator}>
+                        {locator}
+                      </option>
+                    ))
+                  }
+                </select>
+              </div>
+              <div className="flex gap-2 px-4 py-2 bg-black/25 mb-4">
+                <input
+                  key={`${selectedAction}${selectedLocator}`}
+                  type="text"
+                  id="command"
+                  value={selectedElementCommand ?? "No command selected."}
+                  className="grow"
+                  readOnly
+                />
+                <button
+                  ref={copyBtnRef}
+                  type="button"
+                  className="w-fit px-2 py-1 rounded-md bg-white text-stone-700 hover:bg-stone-200"
+                  onClick={async () => {
+                    if (selectedElementCommand) {
+                      await navigator.clipboard.writeText(selectedElementCommand);
+                      const newLastCopied = Date.now();
+                      lastCopiedRef.current = newLastCopied;
+
+                      const btn = copyBtnRef.current;
+                      if (!btn) return;
+                      btn.innerText = "Copied!";
+                      btn.dataset.copied = "true";
+
+                      setTimeout(() => {
+                        if (
+                          copyBtnRef.current
+                          && lastCopiedRef.current === newLastCopied
+                        ) {
+                          copyBtnRef.current.innerText = "Copy";
+                        }
+                      }, 2000);
+                    }
+                  }}
+                >
+                  Copy
+                </button>
+              </div>
+            </>
+          ) : (
+            <p>
+              Select an element from your website or app, then choose an action and which selector you want to use.
+            </p>
+          )
+        }
+      </>
+    </div>
+  );
+}
 
 export default function WorkflowEditor() {
   const editorRef = useRef<EditorView | null>(null);
@@ -72,7 +218,7 @@ export default function WorkflowEditor() {
   const copyBtnRef = useRef<HTMLButtonElement | null>(null);
   const lastCopiedRef = useRef(0);
 
-  const [tab, setTab] = useState<EditorTab>("logs");
+  const [tab, setTab] = useState<WorkflowEditorTab>("logs");
 
   const [executionStatus, setExecutionStatus] = useState<ExecutionStatus>('stopped');
   const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
@@ -83,7 +229,7 @@ export default function WorkflowEditor() {
   const [selectedLocator, setSelectedLocator] = useState<string | null>(null);
   const [selectedElementCommand, setSelectedElementCommand] = useState<string | null>(null);
 
-  const selectTab = (tab: EditorTab) => {
+  const selectTab = (tab: WorkflowEditorTab) => {
     if (tab === "logs") {
       if (inspecting) {
         sendClientOperation({
@@ -107,8 +253,6 @@ export default function WorkflowEditor() {
   }
 
   const {
-    isConnected,
-    isAuthenticated,
     sendClientOperation,
   } = useOperations({
     onConnect: () => {
@@ -123,7 +267,8 @@ export default function WorkflowEditor() {
         setExecutionStatus(operation.data.status);
       } else if (operation.opCode === 5) {
         setLogEntries((prevEntries) => {
-          const prevEntriesToDisplay = prevEntries.length === MAX_LOG_ENTRIES
+          const prevEntriesToDisplay = MAX_LOG_ENTRIES
+            && prevEntries.length === MAX_LOG_ENTRIES
             ? prevEntries.slice(1)
             : prevEntries;
           return [...prevEntriesToDisplay, operation.data]
@@ -174,9 +319,6 @@ export default function WorkflowEditor() {
       setSelectedElementCommand(null);
     }
   }, [selectedElement, selectedAction, selectedLocator])
-
-  console.log("elementOptions selectedAction selectedLocator", selectedElement, selectedAction, selectedLocator);
-  console.log("selectedElementCommand", selectedElementCommand);
 
   return (
     <div className="flex min-w-5xl h-screen bg-zinc-50 font-sans">
@@ -249,125 +391,24 @@ export default function WorkflowEditor() {
           </div>
           {
             tab === "logs" ? (
-              <EditorConsole
+              <ConsoleLogTab
                 ref={consoleRef}
                 logEntries={logEntries}
               />
             ) : tab === "elements" ? (
-              <div
-                className="w-full h-full py-4 px-8 bg-stone-400 flex flex-col"
-              >
-                <>
-                  <div className="flex items-center gap-4 mb-4">
-                    <h4 className="font-semibold">
-                      {selectedElement ? "Element selected" : "No element selected"}
-                    </h4>
-                    <button
-                      type="button"
-                      className={cn("w-fit h-fit px-2 py-1 rounded-md bg-stone-700 hover:bg-stone-800", !selectedElement && "invisible")}
-                      onClick={() => setSelectedElement(null)}
-                    >
-                      Deselect
-                    </button>
-                  </div>
-                  {
-                    selectedElement ? (
-                      <>
-                        <div className="flex items-center gap-4 mb-2">
-                          <label htmlFor="action-select" className="w-16">Action</label>
-                          <select
-                            ref={selectActionRef}
-                            id="action-select"
-                            name="action-select"
-                            className="bg-black/20 rounded-md py-1 px-2 w-40"
-                            onInput={(e) => {
-                              const value = e.currentTarget.value;
-                              setSelectedAction(value === "null" ? null : value as SelectedElementAction);
-                            }}
-                          >
-                            <option value="null">
-                              Select an action
-                            </option>
-                            {
-                              SELECTED_ELEMENT_ACTIONS.map((action) => (
-                                <option key={action} value={action}>
-                                  {getSelectedActionLabel(action)}
-                                </option>
-                              ))
-                            }
-                          </select>
-                        </div>
-                        <div className="flex items-center gap-4 mb-4">
-                          <label htmlFor="locator-select" className="w-16">Locator</label>
-                          <select
-                            ref={selectLocatorRef}
-                            id="locator-select"
-                            name="locator-select"
-                            className="bg-black/20 rounded-md py-1 px-2 w-100"
-                            onInput={(e) => {
-                              const value = e.currentTarget.value;
-                              setSelectedLocator(value === "null" ? null : value);
-                            }}
-                          >
-                            <option value="null">
-                              Select a locator
-                            </option>
-                            {
-                              selectedElement.locators.map((locator) => (
-                                <option key={locator} value={locator}>
-                                  {locator}
-                                </option>
-                              ))
-                            }
-                          </select>
-                        </div>
-                        <div className="flex gap-2 px-4 py-2 bg-black/25 mb-4">
-                          <input
-                            key={`${selectedAction}${selectedLocator}`}
-                            type="text"
-                            id="command"
-                            value={selectedElementCommand ?? "No command selected."}
-                            className="grow"
-                            readOnly
-                          />
-                          <button
-                            ref={copyBtnRef}
-                            type="button"
-                            className="w-fit px-2 py-1 rounded-md bg-white text-stone-700 hover:bg-stone-200"
-                            onClick={async () => {
-                              if (selectedElementCommand) {
-                                await navigator.clipboard.writeText(selectedElementCommand);
-                                const newLastCopied = Date.now();
-                                lastCopiedRef.current = newLastCopied;
-
-                                const btn = copyBtnRef.current;
-                                if (!btn) return;
-                                btn.innerText = "Copied!";
-                                btn.dataset.copied = "true";
-
-                                setTimeout(() => {
-                                  if (
-                                    copyBtnRef.current
-                                    && lastCopiedRef.current === newLastCopied
-                                  ) {
-                                    copyBtnRef.current.innerText = "Copy";
-                                  }
-                                }, 2000);
-                              }
-                            }}
-                          >
-                            Copy
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      <p>
-                        Select an element from your website or app, then choose an action and which selector you want to use.
-                      </p>
-                    )
-                  }
-                </>
-              </div>
+              <InspectElementTab
+                selectedElement={selectedElement}
+                setSelectedElement={setSelectedElement}
+                selectActionRef={selectActionRef}
+                selectedAction={selectedAction}
+                setSelectedAction={setSelectedAction}
+                selectLocatorRef={selectLocatorRef}
+                selectedLocator={selectedLocator}
+                setSelectedLocator={setSelectedLocator}
+                selectedElementCommand={selectedElementCommand}
+                copyBtnRef={copyBtnRef}
+                lastCopiedRef={lastCopiedRef}
+              />
             ) : undefined
           }
         </div>
