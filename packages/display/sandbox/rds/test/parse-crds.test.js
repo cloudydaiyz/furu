@@ -1,7 +1,6 @@
-#!/usr/bin/env node
-
+const assert = require('node:assert');
+const { test } = require('node:test');
 const extract = require('../parse-crds');
-const assert = require('assert');
 
 const output1 = {
     "Groups": [],
@@ -270,7 +269,9 @@ const output2 = {
     ]
 };
 
-assert.equal(extract(output1, 'instance-id'), 'i-0f8572f3f625de186');
-assert.equal(extract(output1, 'public-dns'), '');
-assert.equal(extract(output2, 'instance-id', 'describe'), 'i-0f8572f3f625de186');
-assert.equal(extract(output2, 'public-dns', 'describe'), 'ec2-18-220-239-187.us-east-2.compute.amazonaws.com');
+test("parses correctly", () => {
+    assert.equal(extract(output1, 'instance-id'), 'i-0f8572f3f625de186');
+    assert.equal(extract(output1, 'public-dns'), '');
+    assert.equal(extract(output2, 'instance-id', 'describe'), 'i-0f8572f3f625de186');
+    assert.equal(extract(output2, 'public-dns', 'describe'), 'ec2-18-220-239-187.us-east-2.compute.amazonaws.com');
+});

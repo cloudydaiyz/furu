@@ -17,5 +17,5 @@ echo "Hostname: $PUBLIC_DNS"
 echo "Port: 5901"
 echo
 echo "** Authentication **"
-echo "Password: <enter password here>"
+echo "Password: helloworld"
 echo

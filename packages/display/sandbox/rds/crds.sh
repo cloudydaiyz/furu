@@ -2,6 +2,12 @@
 
 ## crds.sh - Create Remote Desktop Server
 
+# PREREQUISITES:
+# 1. Ensure you have a key-pair named "guac-key" created
+# 2. Ensure the location to the `.pem` file associated with that key-pair
+#    is at $GUAC_KEY
+# 3. Run `chmod 400 $GUAC_KEY` on your keyfile if you haven't already
+
 ## Create EC2 instance
 ## NOTE: Remote desktop just barely runs with t2.medium
 ## https://docs.aws.amazon.com/cli/latest/userguide/cli-services-ec2-instances.html 
@@ -34,7 +40,7 @@ echo
 echo Shell commands:
 echo export INSTANCE_ID="$INSTANCE_ID"
 echo export PUBLIC_DNS="$PUBLIC_DNS"
-echo ssh -L 5901:localhost:5901 -i "~/.ssh/apollo/guac-key.pem" "ec2-user@$PUBLIC_DNS"
+echo ssh -L 5901:localhost:5901 -i "$GUAC_KEY" "ec2-user@$PUBLIC_DNS"
 
 ## AFTER RUNNING THIS
 ## Use your VNC client to connect to localhost:5901 or 127.0.0.1:5901 with the previously set VNC password.
