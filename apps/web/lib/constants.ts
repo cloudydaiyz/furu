@@ -13,16 +13,16 @@ import { pageScreenshot } from "./workflows/page-screenshot";
 import { recordVideo } from "./workflows/record-video";
 import { todoMvc } from "./workflows/todo-mvc";
 
-// export const API_URL = process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:4000';
-export const API_HOST = process.env.NEXT_PUBLIC_FURU_API_HOST!;
-export const API_PORT = +process.env.NEXT_PUBLIC_FURU_API_PORT!;
-export const API_ACCESS_KEY = process.env.NEXT_PUBLIC_FURU_API_ACCESS_KEY!;
+export const dfmt = new Intl.DateTimeFormat("en", {
+  hour: "numeric",
+  minute: "numeric",
+  second: "numeric",
+  fractionalSecondDigits: 3,
+  hour12: false,
+});
 
-console.log(API_HOST, API_PORT, API_ACCESS_KEY);
-if (!API_HOST || !API_PORT || !API_ACCESS_KEY) {
-  throw new Error("Environment variables undefined");
-}
-export const API_URL = `http://${API_HOST}:${API_PORT}`;
+// const MAX_LOG_ENTRIES = 40;
+export const MAX_LOG_ENTRIES = undefined;
 
 export const SAMPLE_WORKFLOWS = {
   "crawl-y-combinator": crawlYCombinator,

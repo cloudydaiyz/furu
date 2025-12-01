@@ -8,15 +8,15 @@
   "repository": "https://github.com/cloudydaiyz/furu",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && pnpm exec playwright install",
-    "start": "pnpm build && node dist/index.js"
+    "build": "tsc",
+    "start": "node dist/index.js"
   },
   "dependencies": {
-    "@cloudydaiyz/furu-controller": "workspace:*"
+    "@cloudydaiyz/furu-controller": "workspace:*",
+    "playwright": "^1.57.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
-    "playwright": "^1.57.0",
     "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@10.12.3"

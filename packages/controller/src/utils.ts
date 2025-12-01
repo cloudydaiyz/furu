@@ -5,7 +5,6 @@ import { ClientOperation, ServerOperation } from "./types";
 import util from "util";
 
 export const BUFFER_DELIMITER = '\0\0\0';
-export const DEFAULT_ACCESS_KEY = process.env.ACCESS_KEY || "helloworld";
 export const defaultConsole = { ...console };
 
 export function setGlobalConsole(newConsole: Console) {

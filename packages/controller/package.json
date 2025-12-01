@@ -29,7 +29,7 @@
     "axe-playwright": "^2.2.2",
     "escodegen": "^2.1.0",
     "esprima": "^4.0.1",
-    "playwright": "^1.56.1",
+    "playwright": "^1.57.0",
     "web-vitals": "^5.1.0",
     "yaml": "^2.8.1"
   },

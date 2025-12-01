@@ -3,18 +3,24 @@ import { Server } from "socket.io";
 import { runClient as runControllerClient, TCPMessageSender, type ClientOperation } from '@cloudydaiyz/furu-controller';
 import { type ApiClientOperation, type ApiServerOperation } from '@cloudydaiyz/furu-api';
 
-const API_PORT = +process.env.FURU_API_PORT!;
-const API_ACCESS_KEY = process.env.FURU_API_ACCESS_KEY!;
-const CONTROLLER_HOST = process.env.FURU_CONTROLLER_HOST!;
-const CONTROLLER_PORT = +process.env.FURU_CONTROLLER_PORT!;
-const CONTROLLER_ACCESS_KEY = process.env.FURU_CONTROLLER_ACCESS_KEY!;
-
-assert(API_PORT && API_ACCESS_KEY && CONTROLLER_HOST && CONTROLLER_PORT && CONTROLLER_ACCESS_KEY);
+const API_PORT = 4000;
 
 async function launchApi() {
+  const WEB_HOST = process.env.FURU_WEB_HOST;
+  const API_ACCESS_KEY = process.env.FURU_API_ACCESS_KEY;
+  const CONTROLLER_HOST = process.env.FURU_CONTROLLER_HOST;
+  const CONTROLLER_ACCESS_KEY = process.env.FURU_CONTROLLER_ACCESS_KEY;
+
+  assert(API_ACCESS_KEY && CONTROLLER_HOST && CONTROLLER_ACCESS_KEY);
+
   const io = new Server({
     cors: {
-      origin: "http://localhost:3000"
+      origin: [
+        `http://${WEB_HOST}:3000`,
+        `https://${WEB_HOST}:3000`,
+        `http://${WEB_HOST}:8080`,
+        `https://${WEB_HOST}:8080`,
+      ],
     }
   });
 
@@ -41,7 +47,6 @@ async function launchApi() {
     const launchController = async () => {
       const { sender } = await runControllerClient({
         host: CONTROLLER_HOST,
-        port: CONTROLLER_PORT,
         accessKey: CONTROLLER_ACCESS_KEY,
         onServerOperation: async (operation) => {
           switch (operation.opCode) {

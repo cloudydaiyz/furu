@@ -1,32 +1,34 @@
-import { API_ACCESS_KEY, API_URL } from '@/lib/constants';
 import { ApiClientOperation, ApiServerOperation } from '@cloudydaiyz/furu-api';
-import { useState, useEffect } from 'react';
-import { io } from 'socket.io-client';
-
-export const socket = io(API_URL);
+import { useState, useEffect, useRef } from 'react';
+import { io, type Socket } from 'socket.io-client';
 
 interface UseOperationsProps {
+  apiUrl: string;
+  apiAccessKey: string;
   onServerOperation?: (operation: ApiServerOperation) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
 }
 
 export function useOperations({
+  apiUrl,
+  apiAccessKey,
   onServerOperation,
   onConnect: onConnectCallback,
   onDisconnect: onDisconnectCallback,
 }: UseOperationsProps) {
-  const [isConnected, setIsConnected] = useState(socket.connected);
+  const socket = useRef<Socket>(null);
+  const [isConnected, setIsConnected] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const sendClientOperation = (operation: ApiClientOperation) =>
-    socket.emit("operation", operation);
+    socket.current?.emit("operation", operation);
 
   function onConnect() {
     sendClientOperation({
       opCode: 1,
       data: {
-        accessKey: API_ACCESS_KEY,
+        accessKey: apiAccessKey,
       }
     });
     setIsConnected(true);
@@ -48,14 +50,18 @@ export function useOperations({
   }
 
   useEffect(() => {
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-    socket.on("operation", onOperation);
+    if (!socket.current) {
+      socket.current = io(apiUrl);
+    }
+
+    socket.current.on('connect', onConnect);
+    socket.current.on('disconnect', onDisconnect);
+    socket.current.on("operation", onOperation);
 
     return () => {
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.off('operation', onOperation);
+      socket.current?.off('connect', onConnect);
+      socket.current?.off('disconnect', onDisconnect);
+      socket.current?.off('operation', onOperation);
     };
   }, []);
 

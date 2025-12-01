@@ -1,4 +1,3 @@
-export const DEFAULT_ACCESS_KEY = "helloworld";
 export const SELECTED_ELEMENT_ACTIONS = [
   "click",
   "rightClick",

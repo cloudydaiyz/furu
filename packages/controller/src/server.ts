@@ -1,21 +1,19 @@
 import net from "net";
 import { WorkflowExecutor } from "./executor";
 import { ClientOperation } from "./types";
-import { DEFAULT_ACCESS_KEY, BUFFER_DELIMITER, MessageBuffer, TCPMessageSender } from "./utils";
+import { BUFFER_DELIMITER, MessageBuffer, TCPMessageSender } from "./utils";
 
-export const DEFAULT_OPERATION_SERVER_PORT = 8124;
+export const CONTROLLER_PORT = 8124;
 
 export interface ControllerServerOptions {
-  accessKey?: string,
-  port?: number,
+  accessKey: string,
   onClientOperation?: (op: ClientOperation) => Promise<void>,
 }
 
 export function runServer({
-  accessKey = DEFAULT_ACCESS_KEY,
-  port = DEFAULT_OPERATION_SERVER_PORT,
+  accessKey,
   onClientOperation,
-}: ControllerServerOptions = {}) {
+}: ControllerServerOptions) {
   const operationServer = net.createServer(async (connection) => {
     console.log(`client connected`, connection.address());
 
@@ -117,7 +115,7 @@ export function runServer({
     throw err;
   });
 
-  operationServer.listen(port, () => {
+  operationServer.listen(CONTROLLER_PORT, () => {
     console.log('server bound');
   });
 
