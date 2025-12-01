@@ -1,37 +1,23 @@
 import 'dotenv/config'
 
-import express from "express";
-import cors from "cors";
-import { createServer } from "http";
+import assert from 'assert';
 import { Server } from "socket.io";
-import { runServer, runClient, sendSampleCommand, TCPMessageSender, type ClientOperation } from '@cloudydaiyz/furu-controller';
-import { DEFAULT_ACCESS_KEY, type ApiClientOperation, type ApiServerOperation } from '@cloudydaiyz/furu-api';
+import { runClient as runControllerClient, TCPMessageSender, type ClientOperation } from '@cloudydaiyz/furu-controller';
+import { type ApiClientOperation, type ApiServerOperation } from '@cloudydaiyz/furu-api';
 
-const port = 4000;
-const controllerAccessKey = DEFAULT_ACCESS_KEY;
-const apiAccessKey = DEFAULT_ACCESS_KEY;
+const API_PORT = +process.env.FURU_API_PORT!;
+const API_ACCESS_KEY = process.env.FURU_API_ACCESS_KEY!;
+const CONTROLLER_HOST = process.env.FURU_CONTROLLER_HOST!;
+const CONTROLLER_PORT = +process.env.FURU_CONTROLLER_PORT!;
+const CONTROLLER_ACCESS_KEY = process.env.FURU_CONTROLLER_ACCESS_KEY!;
 
-const title = "todo-mvc";
-// const title = "hacker-news-sorted";
-// const title = "hacker-news-cwv";
-// const title = "hacker-news-accessibility";
-// const title = "crawl-y-combinator";
+assert(API_PORT && API_ACCESS_KEY && CONTROLLER_HOST && CONTROLLER_PORT && CONTROLLER_ACCESS_KEY);
 
 async function launchApi() {
-  const app = express();
-  app.use(cors());
-
-  const httpServer = createServer(app);
-  const io = new Server(httpServer, {
+  const io = new Server({
     cors: {
       origin: "http://localhost:3000"
     }
-  });
-
-  app.get('/', async (req, res) => {
-    const { sender } = await runClient({ accessKey: controllerAccessKey });
-    await sendSampleCommand(sender, title);
-    res.send('Operation sent');
   });
 
   io.on("connection", (socket) => {
@@ -48,16 +34,17 @@ async function launchApi() {
       controllerSender.sendClientOperation(operation);
 
     const verifyClientAccessKey = async (clientKey: string) => {
-      if (clientKey === apiAccessKey) {
+      if (clientKey === API_ACCESS_KEY) {
         return true;
       }
       return false;
     }
 
     const launchController = async () => {
-      runServer({ accessKey: controllerAccessKey });
-      const { sender } = await runClient({
-        accessKey: controllerAccessKey,
+      const { sender } = await runControllerClient({
+        host: CONTROLLER_HOST,
+        port: CONTROLLER_PORT,
+        accessKey: CONTROLLER_ACCESS_KEY,
         onServerOperation: async (operation) => {
           switch (operation.opCode) {
             case 1:
@@ -170,9 +157,8 @@ async function launchApi() {
     });
   });
 
-  httpServer.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
-  });
+  io.listen(API_PORT);
+  console.log(`Example app listening on port ${API_PORT}`)
 }
 
 launchApi();

@@ -1,0 +1,22 @@
+{
+  "name": "@cloudydaiyz/furu-controller-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "author": "Kylan Duncan",
+  "license": "ISC",
+  "repository": "https://github.com/cloudydaiyz/furu",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && pnpm exec playwright install",
+    "start": "pnpm build && node dist/index.js"
+  },
+  "dependencies": {
+    "@cloudydaiyz/furu-controller": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3"
+  },
+  "packageManager": "pnpm@10.12.3"
+}

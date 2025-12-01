@@ -1,3 +1,5 @@
+// FUTURE: Use redis
+
 import assert from 'assert';
 import { Queue, Worker, QueueEvents } from 'bullmq';
 import { Redis } from 'ioredis';

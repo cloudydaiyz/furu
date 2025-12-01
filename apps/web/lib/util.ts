@@ -1,6 +1,9 @@
-import { SELECTED_ELEMENT_ACTIONS, SelectedElementAction } from '@cloudydaiyz/furu-api';
+import { BlockExecutionStatus, SelectedElementAction } from '@cloudydaiyz/furu-api';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { SAMPLE_WORKFLOWS } from './constants';
+
+export type SampleWorkflow = keyof typeof SAMPLE_WORKFLOWS;
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -62,4 +65,19 @@ export function getSelectedElementCommand(
     default:
       return "No action";
   }
+}
+
+export function findLastLine(block: BlockExecutionStatus): number | null {
+  let max = null;
+  for (const line in block) {
+    const lineNumber = Number.parseInt(line);
+    if (!max || lineNumber > max) {
+      max = lineNumber;
+    }
+  }
+  return max;
+}
+
+export function getWorkflowContent(title: SampleWorkflow): string {
+  return SAMPLE_WORKFLOWS[title];
 }

@@ -3,7 +3,8 @@
 import { CodeEditor } from "@/client/components/CodeEditor";
 import { clearLineStatusGutter, getCodeFromEditor, updateLineStatusGutter } from "@/client/components/gutter";
 import { useOperations } from "@/client/hooks/useOperations";
-import { cn, getSelectedElementCommand, getSelectedActionLabel } from "@/lib/util";
+import { SAMPLE_WORKFLOW_TITLES } from "@/lib/constants";
+import { cn, getSelectedElementCommand, getSelectedActionLabel, findLastLine, SampleWorkflow, getWorkflowContent } from "@/lib/util";
 import { todoMvc } from "@/lib/workflows/todo-mvc";
 import { ExecutionRange, ExecutionStatus, LogEntry, SELECTED_ELEMENT_ACTIONS, SelectedElementAction, SelectedElementOptions } from "@cloudydaiyz/furu-api";
 import { EditorView } from "@codemirror/view";
@@ -220,6 +221,8 @@ export default function WorkflowEditor() {
 
   const [tab, setTab] = useState<WorkflowEditorTab>("logs");
 
+  const [content, setContent] = useState(todoMvc);
+  const [resetContext, setResetContext] = useState(true);
   const [executionStatus, setExecutionStatus] = useState<ExecutionStatus>('stopped');
   const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
 
@@ -261,8 +264,15 @@ export default function WorkflowEditor() {
     },
     onServerOperation: (operation) => {
       if (operation.opCode === 4) {
-        if (editorRef.current) {
-          updateLineStatusGutter(editorRef.current, operation.data.lines);
+        const view = editorRef.current;
+        if (view) {
+          updateLineStatusGutter(view, operation.data.lines);
+          const lastLine = findLastLine(operation.data.lines);
+          if (lastLine) {
+            const from = view.state.doc.line(lastLine).from;
+            const scrollEffect = EditorView.scrollIntoView(from, { yMargin: 40 });
+            view.dispatch({ effects: scrollEffect });
+          }
         }
         setExecutionStatus(operation.data.status);
       } else if (operation.opCode === 5) {
@@ -326,48 +336,97 @@ export default function WorkflowEditor() {
         <div className="w-full grow overflow-hidden">
           <CodeEditor
             editorRef={editorRef}
-            content={todoMvc}
+            content={content}
             isCurrentVersion={true}
             currentVersionIndex={0}
           />
         </div>
-        <div className="flex flex-row-reverse w-full h-fit p-2 bg-stone-500 justify-start items-start">
-          <button
-            type="button"
-            className="h-fit w-40 bg-stone-700 px-4 py-2 rounded-md hover:bg-stone-800"
-            onClick={() => {
-              const view = editorRef.current;
-              if (view) {
-                if (executionStatus === "running") {
-                  sendClientOperation({
-                    opCode: 3,
-                    data: "stop",
+        <div className="flex flex-col gap-4 w-full h-fit p-4 bg-stone-500">
+          <div className="flex items-center gap-4 justify-end w-full h-fit">
+            <select
+              name="select-content"
+              className="h-fit w-40 bg-stone-700 px-2 py-2 rounded-md enabled:hover:bg-stone-800"
+              onInput={(e) => {
+                const title = e.currentTarget.value as SampleWorkflow;
+                const newContent = getWorkflowContent(title);
+                setContent(newContent);
+                if (editorRef.current) {
+                  editorRef.current.dispatch({
+                    effects: EditorView.scrollIntoView(0)
                   });
                 }
-
-                console.log("view.state.selection", view.state.selection, view.state.selection.ranges.length);
-                let range: ExecutionRange | undefined = undefined;
-                const selection = view.state.selection;
-                for (const selRange of selection.ranges) {
-                  if (selRange.to - selRange.from > 0) {
-                    const start = view.state.doc.lineAt(selRange.from).number;
-                    const end = view.state.doc.lineAt(selRange.to).number;
-                    range = { start, end };
-                    break;
-                  }
-                }
-
-                const workflow = getCodeFromEditor(view);
-                sendClientOperation({
-                  opCode: 2,
-                  data: { workflow, range, resetContext: true }
-                });
-                selectTab("logs");
+              }}
+              defaultValue={"todo-mvc"}
+              disabled={executionStatus === "running"}
+            >
+              {
+                SAMPLE_WORKFLOW_TITLES.map(title => (
+                  <option key={title} value={title}>
+                    {title}
+                  </option>
+                ))
               }
-            }}
-          >
-            {executionStatus === "running" ? "Stop" : "Play"}
-          </button>
+            </select>
+            <button
+              className="h-fit w-40 bg-stone-700 px-2 py-2 rounded-md hover:bg-stone-800"
+              onClick={() => {
+                sendClientOperation({
+                  opCode: 5,
+                  data: "reset-context",
+                });
+              }}
+              disabled={executionStatus === "running"}
+            >
+              Reset Context
+            </button>
+            <button
+              className="h-fit w-40 bg-stone-700 px-2 py-2 rounded-md hover:bg-stone-800"
+              onClick={() => {
+                const view = editorRef.current;
+                if (view) {
+                  if (executionStatus === "running") {
+                    sendClientOperation({
+                      opCode: 3,
+                      data: "stop",
+                    });
+                    return;
+                  }
+
+                  console.log("view.state.selection", view.state.selection, view.state.selection.ranges.length);
+                  let range: ExecutionRange | undefined = undefined;
+                  const selection = view.state.selection;
+                  for (const selRange of selection.ranges) {
+                    if (selRange.to - selRange.from > 0) {
+                      const start = view.state.doc.lineAt(selRange.from).number;
+                      const end = view.state.doc.lineAt(selRange.to).number;
+                      range = { start, end };
+                      break;
+                    }
+                  }
+
+                  const workflow = getCodeFromEditor(view);
+                  sendClientOperation({
+                    opCode: 2,
+                    data: { workflow, range, resetContext }
+                  });
+                  selectTab("logs");
+                }
+              }}
+            >
+              {executionStatus === "running" ? "Stop" : "Play"}
+            </button>
+          </div>
+          <div className="flex justify-end gap-2">
+            <input
+              id="reset-context"
+              type="checkbox"
+              defaultChecked={true}
+              onInput={(e) => {
+                setResetContext(e.currentTarget.checked);
+              }}
+            />
+            <label htmlFor="reset-context">Reset context on play</label>
+          </div>
         </div>
       </div>
       <div className="h-screen w-1/2 flex flex-col">

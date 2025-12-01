@@ -1,5 +1,5 @@
-import { API_URL } from '@/lib/constants';
-import { ApiClientOperation, DEFAULT_ACCESS_KEY, ApiServerOperation } from '@cloudydaiyz/furu-api';
+import { API_ACCESS_KEY, API_URL } from '@/lib/constants';
+import { ApiClientOperation, ApiServerOperation } from '@cloudydaiyz/furu-api';
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 
@@ -26,7 +26,7 @@ export function useOperations({
     sendClientOperation({
       opCode: 1,
       data: {
-        accessKey: DEFAULT_ACCESS_KEY,
+        accessKey: API_ACCESS_KEY,
       }
     });
     setIsConnected(true);
