@@ -1,5 +1,3 @@
-import 'dotenv/config'
-
 import assert from 'assert';
 import { Server } from "socket.io";
 import { runClient as runControllerClient, TCPMessageSender, type ClientOperation } from '@cloudydaiyz/furu-controller';

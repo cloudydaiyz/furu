@@ -17,6 +17,7 @@ import { todoMvc } from "./workflows/todo-mvc";
 export const API_HOST = process.env.NEXT_PUBLIC_FURU_API_HOST!;
 export const API_PORT = +process.env.NEXT_PUBLIC_FURU_API_PORT!;
 export const API_ACCESS_KEY = process.env.NEXT_PUBLIC_FURU_API_ACCESS_KEY!;
+
 console.log(API_HOST, API_PORT, API_ACCESS_KEY);
 if (!API_HOST || !API_PORT || !API_ACCESS_KEY) {
   throw new Error("Environment variables undefined");
