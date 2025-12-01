@@ -1,0 +1,16 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "scripts": {
+    "guacd:up": "docker run --name guacd -d -p 4822:4822 guacamole/guacd",
+    "guacd:down": "docker stop guacd && docker rm guacd",
+    "start": "tsc && node dist/index.js"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "guacamole-lite": "^1.2.0"
+  }
+}

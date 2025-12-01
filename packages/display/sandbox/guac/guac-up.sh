@@ -42,12 +42,3 @@ docker run -d \
 # mkdir -p ./container-data/guacamole-home
 # cp guac/guacamole.properties container-data/guacamole-home/guacamole.properties
 # docker-compose up -d
-
-# AFTER RUNNING THIS
-# 1. Open Guacamole at http://localhost:8080/guacamole
-# 2. Log in to guacamole using username "guacadmin" and password "guacadmin"
-# 3. Navigate to Settings (Username in top right corner > Settings)
-# 4. Navigate to Connections > New Connection
-# 5. Run guac/guac-info.sh to get information to use for guacamole and input the information in the New Connection setup, and save
-# 6. Navigate to Home (Username in top right corner > Home)
-# 7. Click on the newly created connection

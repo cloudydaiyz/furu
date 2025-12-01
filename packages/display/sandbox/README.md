@@ -2,18 +2,15 @@
 
 Sandbox for Apache Guacamole testing.
 
-NOTES
-- Any version of Apache Guacamole past v1.5.3 doesn't work on my computer
-
 ## Prerequisites
 
 - Ensure you have Docker and AWS CLI installed
 - Ensure you have a key-pair named "guac-key" created
   - Ensure the location to the `.pem` file associated with that key-pair
-    is at $GUAC_KEY
+    is at `$GUAC_KEY`
   - Run `chmod 400 $GUAC_KEY` on your keyfile if you haven't already
 
-## Steps
+## Running Apache Guacamole
 
 ### Creating the Remote Desktop Server
 1. Run `rds/crds.sh`
@@ -24,7 +21,6 @@ NOTES
       then connect to your remote desktop server using your client in a separate
       process (e.g. if you use your client via the terminal, open you client in a
       separate terminal)
-
 
 ### Connecting to the Remote Desktop Server
 1. Run `guac/guac-init.sh`
@@ -44,9 +40,32 @@ NOTES
 1. Run `guac/guac-down.sh $INSTANCE_ID`
 2. Run `rds/drds.sh $INSTANCE_ID`
 
+## Running Sample Guacamole App
+
+### Creating the Remote Desktop Server
+Same instructions as [above](#creating-the-remote-desktop-server).
+
+### Running the Server
+
+1. Run `npm --prefix apps/server run guacd:up`.
+2. Run `npm --prefix apps/server start`.
+
+### Running the Client
+
+1. Run `npm --prefix apps/server start`.
+
+### Shutting down
+
+1. Ensure the client and server applications, and all Guacamole connections are closed.
+2. Run `rds/drds.sh $INSTANCE_ID`.
+3. Run `npm --prefix apps/server run guacd:down`.
+
 ## Troubleshooting
 
+- Any version of Apache Guacamole past v1.5.3 may not work.
+
 ### `rds/rds.sh`
+
 - To confirm that the TigerVNC service runs, run the following command:
   `sudo systemctl status vncserver@:1.service`
 - Get username of fileowner: `stat -c '%U' "/home/ec2-user/.config/tigervnc/passwd"`
@@ -59,8 +78,10 @@ NOTES
 ## Additional Resources
 
 ### Installing GNOME Desktop Environment
+
   - https://docs.aws.amazon.com/linux/al2023/ug/installing-gnome-al2023.html
 
 ### Installing and Running TigerVNC
+
   - https://docs.aws.amazon.com/linux/al2023/ug/vnc-configuration-al2023.html
   - https://repost.aws/knowledge-center/ec2-linux-2-install-gui

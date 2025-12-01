@@ -1,12 +1,7 @@
 #!/usr/bin/env bash
 
 ## crds.sh - Create Remote Desktop Server
-
-# PREREQUISITES:
-# 1. Ensure you have a key-pair named "guac-key" created
-# 2. Ensure the location to the `.pem` file associated with that key-pair
-#    is at $GUAC_KEY
-# 3. Run `chmod 400 $GUAC_KEY` on your keyfile if you haven't already
+# Provisions an EC2 instance with a VNC remote desktop server preinstalled
 
 ## Create EC2 instance
 ## NOTE: Remote desktop just barely runs with t2.medium
