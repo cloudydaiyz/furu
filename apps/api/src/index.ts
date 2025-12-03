@@ -5,8 +5,6 @@ import { type ApiClientOperation, type ApiServerOperation } from '@cloudydaiyz/f
 
 const API_PORT = 4000;
 
-console.log(process.env);
-
 async function launchApi() {
   const WEB_HOST = process.env.FURU_WEB_HOST;
   const API_ACCESS_KEY = process.env.FURU_API_ACCESS_KEY;

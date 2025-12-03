@@ -39,15 +39,8 @@ OUTPUT2=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID")
 PUBLIC_DNS=$(node scripts/parse-crds.js "$OUTPUT2" public-dns describe)
 echo Public DNS: "$PUBLIC_DNS"
 
-## Create an SSH tunnel from your local machine.
-# ssh -L 5901:localhost:5901 -i "~/.ssh/apollo/guac-key.pem" "ubuntu@$PUBLIC_DNS"
-
 export INSTANCE_ID
 export PUBLIC_DNS
-
-# scp -i $GUAC_KEY "scripts/rds.sh" "ubuntu@$PUBLIC_DNS:~"
-# ssh -i $GUAC_KEY "ubuntu@$PUBLIC_DNS" "chmod u+rx rds.sh"
-# ssh -i $GUAC_KEY "ubuntu@$PUBLIC_DNS" "source ./rds.sh"
 
 echo 
 echo Your remote desktop server has been deployed!
@@ -56,18 +49,25 @@ echo
 echo Shell commands:
 echo export INSTANCE_ID="$INSTANCE_ID"
 echo export PUBLIC_DNS="$PUBLIC_DNS"
-echo export FURU_CONTROLLER_HOST="$PUBLIC_DNS"
-echo export VNC_HOSTNAME="$PUBLIC_DNS"
-echo
-echo scp -i $GUAC_KEY "scripts/rds.sh" "ubuntu@$PUBLIC_DNS:~"
-echo ssh -i $GUAC_KEY "ubuntu@$PUBLIC_DNS" "chmod u+rx rds.sh"
-echo ssh -i $GUAC_KEY "ubuntu@$PUBLIC_DNS" "source ./rds.sh"
 echo
 echo To SSH into the instance:
 echo ssh -i "\$GUAC_KEY" "ubuntu@\$PUBLIC_DNS"
 echo ssh -i "$GUAC_KEY" "ubuntu@$PUBLIC_DNS"
 echo
-echo To SSH into the instance with a tunnel:
+echo Create an SSH tunnel from your local machine:
 echo ssh -L 5901:localhost:5901 -i "\$GUAC_KEY" "ubuntu@\$PUBLIC_DNS"
 echo ssh -L 5901:localhost:5901 -i "$GUAC_KEY" "ubuntu@$PUBLIC_DNS"
 echo
+
+# start pnpm setup
+# No changes to the environment were made. Everything is already up to date.
+# end pnpm setup
+# start source "$HOME/.bashrc"
+# end source "$HOME/.bashrc"
+# start pnpm add -g pm2 typescript playwright
+#  ERR_PNPM_NO_GLOBAL_BIN_DIR  Unable to find the global bin directory
+
+# Run "pnpm setup" to create it automatically, or set the global-bin-dir setting, or the PNPM_HOME env variable. The global bin directory should be in the PATH.
+# end pnpm add -g pm2 typescript playwright
+
+# scripts/apps/controller.sh: line 9: pm2: command not found

@@ -6,4 +6,5 @@
 
 set -euo pipefail
 
-aws ec2 terminate-instances --instance-ids $1
+# aws ec2 terminate-instances --instance-ids $1
+aws ec2 terminate-instances --instance-ids $INSTANCE_ID

@@ -23,27 +23,27 @@ unzip awscliv2.zip
 sudo ./aws/install
 rm -rf awscliv2.zip aws
 
-GITHUB_USER=$(aws ssm get-parameter \
+export GITHUB_USER=$(aws ssm get-parameter \
 	--name "/furu/github-user" \
 	--query "Parameter.Value" \
 	--output "text")
 
-GITHUB_PAT=$(aws ssm get-parameter \
+export GITHUB_PAT=$(aws ssm get-parameter \
 	--name "/furu/github-pat" \
 	--query "Parameter.Value" \
 	--output "text")
 
-COMMIT_ID=$(aws ssm get-parameter \
+export COMMIT_ID=$(aws ssm get-parameter \
 	--name "/furu/commit-id" \
 	--query "Parameter.Value" \
 	--output "text")
 
-FURU_CONTROLLER_ACCESS_KEY=$(aws ssm get-parameter \
+export FURU_CONTROLLER_ACCESS_KEY=$(aws ssm get-parameter \
 	--name "/furu/furu-controller-access-key" \
 	--query "Parameter.Value" \
 	--output "text")
 
-VNC_PASSWORD=$(aws ssm get-parameter \
+export VNC_PASSWORD=$(aws ssm get-parameter \
 	--name "/furu/vnc-password" \
 	--query "Parameter.Value" \
 	--output "text")
@@ -80,14 +80,15 @@ sudo chown ubuntu "$HOME/.vnc/passwd"
 export DISPLAY=:1
 export XAUTHORITY="$HOME/.Xauthority" 
 
+echo Starting VNC server
 vncserver \
 -localhost no \
 -name gnome \
 -SecurityTypes vncauth,tlsvnc \
 -geometry 1920x1080 \
 -depth 32 \
--PasswordFile "/var/lib/furu/.vnc/passwd" \ 
 $DISPLAY
+echo Started VNC server
 
 echo "Starting the app..." | sudo tee -a /var/log/user-data-status
 
@@ -101,6 +102,11 @@ pnpm -v
 
 # Add global pnpm dependencies
 pnpm setup
+
+# Ensure pnpm bin directory is in PATH
+export PNPM_HOME="$HOME/.local/share/pnpm"
+export PATH="$PNPM_HOME:$PATH"
+
 source "$HOME/.bashrc"
 pnpm add -g pm2 typescript playwright
 

@@ -150,11 +150,15 @@ sudo -u ubuntu bash -c '
 	# Setup pnpm
 	pnpm setup
 	
+	# Ensure pnpm bin directory is in PATH for this session
+	export PNPM_HOME="$HOME/.local/share/pnpm"
+	export PATH="$PNPM_HOME:$PATH"
+	
 	# Add global dependencies
 	pnpm add -g pm2 typescript playwright
 '
 
-# Source bashrc for ubuntu user
+# Source bashrc for ubuntu user for future sessions
 sudo -u ubuntu bash -c 'source "$HOME/.bashrc"'
 
 # Clone repository and setup app
