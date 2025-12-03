@@ -26,8 +26,7 @@ OUTPUT1=$(aws ec2 run-instances \
         }
     }
 ]
-' \
---user-data file://scripts/rds.sh)
+')
 
 INSTANCE_ID=$(node scripts/parse-crds.js "${OUTPUT1}" instance-id)
 echo Instance ID: "$INSTANCE_ID"
@@ -46,6 +45,10 @@ echo Public DNS: "$PUBLIC_DNS"
 export INSTANCE_ID
 export PUBLIC_DNS
 
+# scp -i $GUAC_KEY "scripts/rds.sh" "ubuntu@$PUBLIC_DNS:~"
+# ssh -i $GUAC_KEY "ubuntu@$PUBLIC_DNS" "chmod u+rx rds.sh"
+# ssh -i $GUAC_KEY "ubuntu@$PUBLIC_DNS" "source ./rds.sh"
+
 echo 
 echo Your remote desktop server has been deployed!
 echo The server may still be initializing for a couple of minutes.
@@ -56,6 +59,15 @@ echo export PUBLIC_DNS="$PUBLIC_DNS"
 echo export FURU_CONTROLLER_HOST="$PUBLIC_DNS"
 echo export VNC_HOSTNAME="$PUBLIC_DNS"
 echo
+echo scp -i $GUAC_KEY "scripts/rds.sh" "ubuntu@$PUBLIC_DNS:~"
+echo ssh -i $GUAC_KEY "ubuntu@$PUBLIC_DNS" "chmod u+rx rds.sh"
+echo ssh -i $GUAC_KEY "ubuntu@$PUBLIC_DNS" "source ./rds.sh"
+echo
 echo To SSH into the instance:
+echo ssh -i "\$GUAC_KEY" "ubuntu@\$PUBLIC_DNS"
 echo ssh -i "$GUAC_KEY" "ubuntu@$PUBLIC_DNS"
-echo \(with a tunnel \): ssh -L 5901:localhost:5901 -i "$GUAC_KEY" "ubuntu@$PUBLIC_DNS"
+echo
+echo To SSH into the instance with a tunnel:
+echo ssh -L 5901:localhost:5901 -i "\$GUAC_KEY" "ubuntu@\$PUBLIC_DNS"
+echo ssh -L 5901:localhost:5901 -i "$GUAC_KEY" "ubuntu@$PUBLIC_DNS"
+echo
