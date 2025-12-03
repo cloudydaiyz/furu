@@ -57,7 +57,6 @@ const output1 = {
                     "Ipv6Addresses": [],
                     "MacAddress": "02:05:d9:f2:c0:d5",
                     "NetworkInterfaceId": "eni-0c2f9763a779e8b06",
-                    "OwnerId": "471112798654",
                     "PrivateDnsName": "ip-172-31-14-84.us-east-2.compute.internal",
                     "PrivateIpAddress": "172.31.14.84",
                     "PrivateIpAddresses": [
@@ -194,7 +193,6 @@ const output2 = {
                             "Ipv6Addresses": [],
                             "MacAddress": "02:05:d9:f2:c0:d5",
                             "NetworkInterfaceId": "eni-0c2f9763a779e8b06",
-                            "OwnerId": "471112798654",
                             "PrivateDnsName": "ip-172-31-14-84.us-east-2.compute.internal",
                             "PrivateIpAddress": "172.31.14.84",
                             "PrivateIpAddresses": [

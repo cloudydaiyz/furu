@@ -8,7 +8,7 @@
   "repository": "https://github.com/cloudydaiyz/furu",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && playwright install-deps && playwright install",
     "start": "node dist/index.js"
   },
   "dependencies": {

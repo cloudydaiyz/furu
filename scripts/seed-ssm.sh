@@ -1,7 +1,5 @@
 set -euo pipefail
 
-source .env
-
 aws ssm put-parameter \
 	--name "/furu/github-user" \
 	--value $GITHUB_USER \
