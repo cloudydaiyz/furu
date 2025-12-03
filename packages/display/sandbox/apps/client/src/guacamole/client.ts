@@ -12,7 +12,7 @@ export interface BaseConnectionSettings {
   port?: number,
 }
 
-const displayDiv = document.getElementById("display")!;
+const SERVER_PORT = 9091;
 
 let currentClient: Guacamole.Client | null;
 let currentKeyboard: Guacamole.Keyboard | null;
@@ -36,6 +36,7 @@ export function createJoinConnectionToken(connectionId: string, readOnly = false
 
 // Handle regular connection
 export function createNewConnectionToken(
+  displayDiv: HTMLDivElement,
   protocol: Protocol,
   guacdHost: string,
   guacdPort: string,
@@ -89,6 +90,7 @@ export function createNewConnectionToken(
 }
 
 export async function connectToGuacamole(
+  displayDiv: HTMLDivElement,
   tokenObj: any,
   protocol: Protocol,
   guacdHost: string,
@@ -100,7 +102,7 @@ export async function connectToGuacamole(
 
     // Initialize Guacamole client
     const selectedGuacd = `${guacdHost}:${guacdPort}` as const;
-    initializeGuacamoleClient(token, protocol, selectedGuacd);
+    initializeGuacamoleClient(displayDiv, token, protocol, selectedGuacd);
   } catch (e) {
     const error = e as Error;
     console.error("Failed to connect:", error);
@@ -109,10 +111,15 @@ export async function connectToGuacamole(
 }
 
 // Function to initialize Guacamole client
-function initializeGuacamoleClient(token: string, protocol: Protocol, selectedGuacd: SelectedGuacd) {
+function initializeGuacamoleClient(
+  displayDiv: HTMLDivElement,
+  token: string,
+  protocol: Protocol,
+  selectedGuacd: SelectedGuacd
+) {
   try {
     // Create WebSocket tunnel
-    const tunnel = new Guacamole.WebSocketTunnel(`ws://${location.hostname}:9091/`);
+    const tunnel = new Guacamole.WebSocketTunnel(`ws://${location.hostname}:${SERVER_PORT}/`);
 
     // Set up onuuid event handler to log connection ID
     tunnel.onuuid = function (uuid) {

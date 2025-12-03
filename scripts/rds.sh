@@ -3,73 +3,110 @@
 # rds.sh - Remote Desktop Server
 # This script includes the commands that are ran when booting a AWS EC2 virtual machine (AL2023)
 # for it to run as a remote desktop server.
+# 
+# Prerequisites: 
+# - VM must have access to the ssm:GetParameter action
+# - VM must have access to the following parameters: 
+#   - /furu/github-user - GitHub Username
+#   - /furu/github-pat - GitHub PAT
+#   - /furu/commit-id - GitHub Commit ID for furu (or "main")
+#   - /furu/furu-controller-access-key - $FURU_CONTROLLER_ACCESS_KEY
 
-set -euo pipefail
+echo "Initializing apt + importing env vars from SSM using AWS CLI..."
 
-## Install the GNOME desktop environment and related packages
-sudo dnf groupinstall "Desktop" -y
+sudo apt update
 
-## Install TigerVNC server package for AL2023
-## NOTE: It may already be installed
-sudo dnf install -y tigervnc-server
+# From: https://dev.to/abstractmusa/install-aws-cli-command-line-interface-on-ubuntu-1b50
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+sudo apt install unzip -y
+unzip awscliv2.zip
+sudo ./aws/install
+rm -rf awscliv2.zip aws
 
-## Assign a display number to the user (":1=ec2-user")
-# sudo vi /etc/tigervnc/vncserver.users
-echo "
-# TigerVNC User assignment
-#
-# This file assigns users to specific VNC display numbers.
-# The syntax is <display>=<username>. E.g.:
-#
-# :2=andrew
-# :3=lisa
+GITHUB_USER=$(aws ssm get-parameter \
+	--name "/furu/github-user" \
+	--query "Parameter.Value" \
+	--output "text")
 
-:1=ec2-user
-" | sudo tee /etc/tigervnc/vncserver.users
+GITHUB_PAT=$(aws ssm get-parameter \
+	--name "/furu/github-pat" \
+	--query "Parameter.Value" \
+	--output "text")
 
-## Edit the VNC server configuration file.
-# sudo vi /etc/tigervnc/vncserver-config-defaults
-echo "
-## Default settings for VNC servers started by the vncserver service
-#
-# Any settings given here will override the builtin defaults, but can
-# also be overriden by ~/.config/tigervnc/config and vncserver-config-mandatory.
-#
-# See HOWTO.md and the following manpages for more details:
-#     vncsession(8) Xvnc(1)
-#
-# Several common settings are shown below. Uncomment and modify to your
-# liking.
+COMMIT_ID=$(aws ssm get-parameter \
+	--name "/furu/commit-id" \
+	--query "Parameter.Value" \
+	--output "text")
 
-# session=gnome
-# securitytypes=vncauth,tlsvnc
-# geometry=2000x1200
-# localhost
-# alwaysshared
+FURU_CONTROLLER_ACCESS_KEY=$(aws ssm get-parameter \
+	--name "/furu/furu-controller-access-key" \
+	--query "Parameter.Value" \
+	--output "text")
 
-session=gnome
-securitytypes=vncauth,tlsvnc
-geometry=1920x1080
-# localhost
-alwaysshared" | sudo tee /etc/tigervnc/vncserver-config-defaults
+VNC_PASSWORD=$(aws ssm get-parameter \
+	--name "/furu/vnc-password" \
+	--query "Parameter.Value" \
+	--output "text")
 
-## Create the VNC password file
-echo Initializing tigervnc directory...
-sudo mkdir -p "/home/ec2-user/.config/tigervnc"
+echo "Setting up VNC + Remote Desktop Server..."
 
-echo Initializing passwd file...
-sudo touch "/home/ec2-user/.config/tigervnc/passwd"
+# Setup GNOME (without initial setup)
+sudo apt install ubuntu-gnome-desktop firefox -y
+sudo apt remove --purge gnome-initial-setup -y
 
-echo Populating passwd file...
-echo "helloworld" | vncpasswd -f | sudo tee "/home/ec2-user/.config/tigervnc/passwd"
+# From systemctl:
+# The unit files have no installation config (WantedBy=, RequiredBy=, 
+# UpheldBy=, Also=, or Alias= settings in the [Install] section, and
+# DefaultInstance=  for template units). 
+# This means they are not meant to be enabled or disabled # using systemctl.
+# sudo systemctl enable gdm
 
-## Ensure the file only has user rw permissions (otherwise the service will not start!)
-echo Configuring passwd file permissions...
-sudo chmod 600 "/home/ec2-user/.config/tigervnc/passwd"
-sudo chown ec2-user "/home/ec2-user/.config/tigervnc/passwd"
+# Disable lock screen, screen blanking, and screen saver
+gsettings set org.gnome.desktop.lockdown disable-lock-screen true
+gsettings set org.gnome.desktop.session idle-delay 0
+gsettings set org.gnome.desktop.screensaver lock-enabled false
 
-## Start the VNC server
-## NOTE: the part after the @ must match the display number
-echo Starting the VNC server...
-sudo systemctl start vncserver@:1
-echo Started VNC server
+sudo systemctl start gdm
+
+# Setup TigerVNC standalone service
+time sudo apt install -y tigervnc-standalone-server tigervnc-xorg-extension tigervnc-viewer
+
+mkdir "$HOME/.vnc"
+touch "$HOME/.vnc/passwd"
+echo $VNC_PASSWORD | vncpasswd -f | sudo tee "$HOME/.vnc/passwd"
+sudo chmod 600 "$HOME/.vnc/passwd"
+sudo chown ubuntu "$HOME/.vnc/passwd"
+
+export DISPLAY=:1
+export XAUTHORITY="$HOME/.Xauthority" 
+
+vncserver \
+-localhost no \
+-name gnome \
+-SecurityTypes vncauth,tlsvnc \
+-geometry 1920x1080 \
+-depth 32 \
+$DISPLAY
+
+echo "Starting the app..."
+
+# Download node + pnpm (from nodejs.org)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+\. "$HOME/.nvm/nvm.sh"
+nvm install 22
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+corepack enable pnpm
+pnpm -v
+
+# Add global pnpm dependencies
+pnpm setup
+source "$HOME/.bashrc"
+pnpm add -g pm2 typescript playwright
+
+git clone https://${GITHUB_USER}:${GITHUB_PAT}@github.com/cloudydaiyz/furu.git app
+cd app
+git checkout $COMMIT_ID
+
+scripts/apps/controller.sh
+
+echo "App started!"

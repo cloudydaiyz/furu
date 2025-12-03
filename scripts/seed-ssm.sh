@@ -23,3 +23,9 @@ aws ssm put-parameter \
 	--value $FURU_CONTROLLER_ACCESS_KEY \
 	--type "String" \
 	--overwrite
+
+aws ssm put-parameter \
+	--name "/furu/vnc-password" \
+	--value $VNC_PASSWORD \
+	--type "String" \
+	--overwrite

@@ -17,6 +17,16 @@ OUTPUT1=$(aws ec2 run-instances \
 --security-group-ids $SECURITY_GROUP_ID \
 --region us-east-2 \
 --iam-instance-profile $INSTANCE_PROFILE_PARAM \
+--block-device-mappings '
+[
+    {
+        "DeviceName": "/dev/sda1",
+        "Ebs": {
+            "VolumeSize": 24
+        }
+    }
+]
+' \
 --user-data file://scripts/rds.sh)
 
 INSTANCE_ID=$(node scripts/parse-crds.js "${OUTPUT1}" instance-id)
@@ -33,11 +43,19 @@ echo Public DNS: "$PUBLIC_DNS"
 ## Create an SSH tunnel from your local machine.
 # ssh -L 5901:localhost:5901 -i "~/.ssh/apollo/guac-key.pem" "ubuntu@$PUBLIC_DNS"
 
+export INSTANCE_ID
+export PUBLIC_DNS
+
+echo 
+echo Your remote desktop server has been deployed!
+echo The server may still be initializing for a couple of minutes.
 echo 
 echo Shell commands:
 echo export INSTANCE_ID="$INSTANCE_ID"
 echo export PUBLIC_DNS="$PUBLIC_DNS"
-echo ssh -L 5901:localhost:5901 -i "$GUAC_KEY" "ubuntu@$PUBLIC_DNS"
-
-## AFTER RUNNING THIS
-## Use your VNC client to connect to localhost:5901 or 127.0.0.1:5901 with the previously set VNC password.
+echo export FURU_CONTROLLER_HOST="$PUBLIC_DNS"
+echo export VNC_HOSTNAME="$PUBLIC_DNS"
+echo
+echo To SSH into the instance:
+echo ssh -i "$GUAC_KEY" "ubuntu@$PUBLIC_DNS"
+echo \(with a tunnel \): ssh -L 5901:localhost:5901 -i "$GUAC_KEY" "ubuntu@$PUBLIC_DNS"

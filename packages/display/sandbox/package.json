@@ -1,0 +1,12 @@
+{
+  "name": "sandbox",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Sandbox for Apache Guacamole testing.",
+  "scripts": {
+    "guacd:up": "docker run --name guacd -d -p $GUACD_PORT:4822 guacamole/guacd",
+    "guacd:down": "docker stop guacd && docker rm guacd",
+    "client:dev": "npm --prefix apps/client run dev",
+    "server:start": "npm --prefix apps/server start"
+  }
+}

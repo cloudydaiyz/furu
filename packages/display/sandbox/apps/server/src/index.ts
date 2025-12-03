@@ -14,7 +14,6 @@ const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 assert(GUACD_HOST && GUACD_PORT && ENCRYPTION_KEY);
 
 const websocketOptions = {
-  // port: 8080,
   port: 9091,
 };
 

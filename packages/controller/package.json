@@ -9,7 +9,8 @@
   ],
   "license": "ISC",
   "scripts": {
-    "build": "tsc && pnpm exec playwright install && node scripts/generate-injected.mjs",
+    "build:playwright": "playwright install-deps && playwright install",
+    "build": "tsc && node scripts/generate-injected.mjs",
     "inspector": "npm run build && node dist/sandbox/inspector.js",
     "executor": "npm run build && node --experimental-repl-await --experimental-vm-modules dist/sandbox/executor.js",
     "start": "npm run build && node dist/start.js"
