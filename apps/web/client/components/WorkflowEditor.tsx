@@ -9,6 +9,7 @@ import { todoMvc } from "@/lib/workflows/todo-mvc";
 import { ExecutionRange, ExecutionStatus, LogEntry, SELECTED_ELEMENT_ACTIONS, SelectedElementAction, SelectedElementOptions } from "@cloudydaiyz/furu-api";
 import { EditorView } from "@codemirror/view";
 import { useEffect, useRef, useState } from "react";
+import { cleanupGuacamole, initializeGuacamoleClient } from "@/lib/guacamole";
 
 type WorkflowEditorTab = "logs" | "elements";
 
@@ -203,11 +204,17 @@ function InspectElementTab({
 interface WorkflowEditorProps {
   apiUrl: string,
   apiAccessKey: string,
+  displayUrl: string,
 }
 
-export default function WorkflowEditor({ apiUrl, apiAccessKey }: WorkflowEditorProps) {
+export default function WorkflowEditor({
+  apiUrl,
+  apiAccessKey,
+  displayUrl
+}: WorkflowEditorProps) {
   const editorRef = useRef<EditorView | null>(null);
   const consoleRef = useRef<HTMLDivElement | null>(null);
+  const displayRef = useRef<HTMLDivElement | null>(null);
   const selectActionRef = useRef<HTMLSelectElement | null>(null);
   const selectLocatorRef = useRef<HTMLSelectElement | null>(null);
   const copyBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -215,6 +222,7 @@ export default function WorkflowEditor({ apiUrl, apiAccessKey }: WorkflowEditorP
 
   const [tab, setTab] = useState<WorkflowEditorTab>("logs");
 
+  const [displayConnected, setDisplayConnected] = useState(false);
   const [content, setContent] = useState(todoMvc);
   const [resetContext, setResetContext] = useState(true);
   const [executionStatus, setExecutionStatus] = useState<ExecutionStatus>('stopped');
@@ -259,30 +267,49 @@ export default function WorkflowEditor({ apiUrl, apiAccessKey }: WorkflowEditorP
       selectTab("logs");
     },
     onServerOperation: (operation) => {
-      if (operation.opCode === 4) {
-        const view = editorRef.current;
-        if (view) {
-          updateLineStatusGutter(view, operation.data.lines);
-          const lastLine = findLastLine(operation.data.lines);
-          if (lastLine) {
-            const from = view.state.doc.line(lastLine).from;
-            const scrollEffect = EditorView.scrollIntoView(from, { yMargin: 40 });
-            view.dispatch({ effects: scrollEffect });
+      switch (operation.opCode) {
+        case 4:
+          const view = editorRef.current;
+          if (view) {
+            updateLineStatusGutter(view, operation.data.lines);
+            const lastLine = findLastLine(operation.data.lines);
+            if (lastLine) {
+              const from = view.state.doc.line(lastLine).from;
+              const scrollEffect = EditorView.scrollIntoView(from, { yMargin: 40 });
+              view.dispatch({ effects: scrollEffect });
+            }
           }
-        }
-        setExecutionStatus(operation.data.status);
-      } else if (operation.opCode === 5) {
-        setLogEntries((prevEntries) => {
-          const prevEntriesToDisplay = MAX_LOG_ENTRIES
-            && prevEntries.length === MAX_LOG_ENTRIES
-            ? prevEntries.slice(1)
-            : prevEntries;
-          return [...prevEntriesToDisplay, operation.data]
-        });
-      } else if (operation.opCode === 6) {
-        setSelectedAction(null);
-        setSelectedLocator(null);
-        setSelectedElement(operation.data);
+          setExecutionStatus(operation.data.status);
+          break;
+        case 5:
+          setLogEntries((prevEntries) => {
+            const prevEntriesToDisplay = MAX_LOG_ENTRIES
+              && prevEntries.length === MAX_LOG_ENTRIES
+              ? prevEntries.slice(1)
+              : prevEntries;
+            return [...prevEntriesToDisplay, operation.data]
+          });
+          break;
+        case 6:
+          setSelectedAction(null);
+          setSelectedLocator(null);
+          setSelectedElement(operation.data);
+          break;
+        case 8:
+          const token = operation.data.displayToken;
+          if (!displayRef.current) {
+            console.error("Unable to initialize Guacamole client: Display not loaded yet.");
+            return;
+          }
+
+          initializeGuacamoleClient(
+            displayRef.current,
+            displayUrl,
+            token,
+          );
+          setDisplayConnected(true);
+        default:
+          break;
       }
     },
     onDisconnect: () => {
@@ -298,6 +325,13 @@ export default function WorkflowEditor({ apiUrl, apiAccessKey }: WorkflowEditorP
       selectTab("logs");
     }
   });
+
+  useEffect(() => {
+    // Handle page unloads to clean up any active sessions
+    window.addEventListener('beforeunload', () => {
+      cleanupGuacamole();
+    });
+  }, []);
 
   useEffect(() => {
     const uiConsole = consoleRef.current;
@@ -426,7 +460,12 @@ export default function WorkflowEditor({ apiUrl, apiAccessKey }: WorkflowEditorP
         </div>
       </div>
       <div className="h-screen w-1/2 flex flex-col">
-        <div className="w-full h-[60%] bg-stone-200"></div>
+        <div className={cn(
+          "relative z-0 w-full h-[60%] bg-stone-200",
+          !displayConnected ? "bg-stone-200" : "bg-transparent"
+        )}>
+          <div ref={displayRef} className="absolute top-0 left-0 size-full z-20" />
+        </div>
         <div className="w-full h-[40%] bg-stone-400 flex flex-col">
           <div className="px-4 flex bg-stone-500">
             <button

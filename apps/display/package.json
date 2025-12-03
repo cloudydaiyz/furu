@@ -1,0 +1,21 @@
+{
+  "name": "@cloudydaiyz/furu-display-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "author": "Kylan Duncan",
+  "license": "ISC",
+  "repository": "https://github.com/cloudydaiyz/furu",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "packageManager": "pnpm@10.12.3",
+  "dependencies": {
+    "@cloudydaiyz/furu-display": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3"
+  }
+}

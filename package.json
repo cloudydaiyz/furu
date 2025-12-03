@@ -4,7 +4,8 @@
   "author": "Kylan Duncan",
   "license": "ISC",
   "scripts": {
-    "build": "echo 'Built'"
+    "guacd:up": "docker run --name guacd -d -p $GUACD_PORT:4822 guacamole/guacd",
+    "guacd:down": "docker stop guacd && docker rm guacd"
   },
   "packageManager": "pnpm@10.12.3"
 }

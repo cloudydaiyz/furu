@@ -2,6 +2,7 @@ import assert from 'assert';
 import { Server } from "socket.io";
 import { runClient as runControllerClient, TCPMessageSender, type ClientOperation } from '@cloudydaiyz/furu-controller';
 import { type ApiClientOperation, type ApiServerOperation } from '@cloudydaiyz/furu-api';
+import { createNewConnectionToken, encryptGuacamoleToken, type BaseConnectionSettings } from '@cloudydaiyz/furu-display';
 
 const API_PORT = 4000;
 
@@ -10,8 +11,21 @@ async function launchApi() {
   const API_ACCESS_KEY = process.env.FURU_API_ACCESS_KEY;
   const CONTROLLER_HOST = process.env.FURU_CONTROLLER_HOST;
   const CONTROLLER_ACCESS_KEY = process.env.FURU_CONTROLLER_ACCESS_KEY;
+  const GUACD_HOST = process.env.GUACD_HOST;
+  const GUACD_PORT = process.env.GUACD_PORT;
+  const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
+  const VNC_PASSWORD = process.env.VITE_VNC_PASSWORD;
+  assert(
+    GUACD_HOST && GUACD_PORT && ENCRYPTION_KEY
+    && WEB_HOST && API_ACCESS_KEY && CONTROLLER_HOST && CONTROLLER_ACCESS_KEY
+    && VNC_PASSWORD
+  );
 
-  assert(API_ACCESS_KEY && CONTROLLER_HOST && CONTROLLER_ACCESS_KEY);
+  const vncConnectionSettings: BaseConnectionSettings = {
+    hostname: CONTROLLER_HOST,
+    port: 5901,
+    password: VNC_PASSWORD,
+  }
 
   const io = new Server({
     cors: {
@@ -23,7 +37,6 @@ async function launchApi() {
       ],
     }
   });
-  console.log('CONTROLLER_ACCESS_KEY', CONTROLLER_ACCESS_KEY);
 
   io.on("connection", (socket) => {
     console.log("New connection!");
@@ -53,6 +66,24 @@ async function launchApi() {
           console.log('controller server operation', operation);
           switch (operation.opCode) {
             case 1:
+              const tokenObj = createNewConnectionToken(
+                "vnc",
+                GUACD_HOST,
+                GUACD_PORT,
+                vncConnectionSettings
+              );
+
+              const token = await encryptGuacamoleToken(
+                tokenObj,
+                ENCRYPTION_KEY,
+              );
+
+              sendApiServerOperation({
+                opCode: 8,
+                data: {
+                  displayToken: token,
+                }
+              });
               break;
             case 2:
               break;

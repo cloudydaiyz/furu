@@ -2,15 +2,9 @@
 
 import GuacamoleLite from "guacamole-lite";
 
-export function runGuacamoleServer(guacdHost: string, guacdPort: number, encryptionKey: string): any {
-  // const GUACD_HOST = process.env.GUACD_HOST;
-  // const GUACD_PORT = process.env.GUACD_PORT;
-  // const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
-  // assert(GUACD_HOST && GUACD_PORT && ENCRYPTION_KEY);
-
-  const websocketOptions = {
-    port: 9091,
-  };
+export function runGuacamoleServer(port: number, guacdHost: string, guacdPort: number, encryptionKey: string): any {
+  // GuacamoleLite creates its own WebSocket server on this port
+  const websocketOptions = { port };
 
   // Default guacd options (used as fallback)
   const guacdOptions = {
@@ -23,6 +17,7 @@ export function runGuacamoleServer(guacdHost: string, guacdPort: number, encrypt
       cypher: 'AES-256-CBC',
       key: encryptionKey,
     },
+    connectionDefaultSettings: {},
     log: {
       level: 'DEBUG',
     },
@@ -38,8 +33,21 @@ export function runGuacamoleServer(guacdHost: string, guacdPort: number, encrypt
   };
 
   console.log('Starting guacamole-lite server...');
-  console.log('Available guacd instances: guacd-1:4822, guacd-2:4822, guacd-3:4822');
   console.log('Default guacd fallback:', `${guacdOptions.host}:${guacdOptions.port}`);
+  console.log('WebSocket listening on port:', port);
 
-  return new GuacamoleLite(websocketOptions, guacdOptions, clientOptions, callbacks);
+  console.log('websocketOptions', websocketOptions);
+  console.log('guacdOptions', guacdOptions);
+  console.log('clientOptions', clientOptions);
+  console.log('callbacks', callbacks);
+
+  const guacServer = new GuacamoleLite(websocketOptions, guacdOptions, clientOptions, callbacks);
+
+  // Log when server is ready
+  setTimeout(() => {
+    console.log(`Guacamole server initialized and listening on port ${port}`);
+    console.log(`WebSocket endpoint: ws://localhost:${port}/`);
+  }, 100);
+
+  return { guacServer, sessionRegistry };
 }

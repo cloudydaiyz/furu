@@ -84,4 +84,9 @@ export type ApiServerOperation = {
 } | {
   opCode: 7;
   data: "context-reset";
+} | {
+  opCode: 8;
+  data: {
+    displayToken: string;
+  }
 }

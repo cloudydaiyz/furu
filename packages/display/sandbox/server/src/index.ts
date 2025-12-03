@@ -52,6 +52,11 @@ console.log('Starting guacamole-lite server...');
 console.log('Available guacd instances: guacd-1:4822, guacd-2:4822, guacd-3:4822');
 console.log('Default guacd fallback:', `${guacdOptions.host}:${guacdOptions.port}`);
 
+console.log('websocketOptions', websocketOptions);
+console.log('guacdOptions', guacdOptions);
+console.log('clientOptions', clientOptions);
+console.log('callbacks', callbacks);
+
 const guacServer = new GuacamoleLite(websocketOptions, guacdOptions, clientOptions, callbacks);
 
 // Add session registry inspection endpoint for admin dashboard

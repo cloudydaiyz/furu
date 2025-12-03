@@ -1,2 +1,2 @@
-export { runGuacamoleServer } from "./server";
-export { generateGuacamoleToken } from "./token";
+export * from "./server";
+export * from "./token";

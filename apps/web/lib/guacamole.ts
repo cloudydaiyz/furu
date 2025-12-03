@@ -1,131 +1,23 @@
-// https://github.com/vadimpronin/guacamole-lite/blob/master/test-guac/guacamole-lite-client/html/js/main.js
 import Guacamole from "guacamole-common-js";
-import { generateGuacamoleToken } from "./token";
-
-type Protocol = "join" | "rdp" | "vnc";
-type SelectedGuacd = `${string}:${string}`;
-
-export interface BaseConnectionSettings {
-  hostname?: string,
-  username?: string,
-  password?: string,
-  port?: number,
-}
-
-const SERVER_PORT = 9091;
 
 let currentClient: Guacamole.Client | null;
 let currentKeyboard: Guacamole.Keyboard | null;
 let pasteEventListener: ((event: ClipboardEvent) => void) | null;
 
-// Handle joining an existing connection
-export function createJoinConnectionToken(connectionId: string, readOnly = false) {
-  let tokenObj: any;
-
-  tokenObj = {
-    connection: {
-      join: connectionId,
-      settings: {
-        'read-only': readOnly
-      }
-    }
-  };
-
-  return tokenObj;
-}
-
-// Handle regular connection
-export function createNewConnectionToken(
-  displayDiv: HTMLDivElement,
-  protocol: Protocol,
-  guacdHost: string,
-  guacdPort: string,
-  baseSettings: BaseConnectionSettings = {},
-) {
-  let tokenObj: any;
-  let connectionSettings;
-
-  // Base connection settings
-  connectionSettings = {
-    hostname: baseSettings ? baseSettings.hostname : 'desktop-linux',
-    username: baseSettings ? baseSettings.username : 'testuser',
-    password: baseSettings ? baseSettings.password : 'Passw0rd!',
-    width: displayDiv.offsetWidth,
-    height: displayDiv.offsetHeight,
-  };
-
-  if (protocol === 'rdp') {
-    Object.assign(connectionSettings, {
-      "ignore-cert": true,
-      "security": "any",
-      "enable-drive": true,
-      "drive-path": "/tmp/guac-drive",
-      "create-drive-path": true,
-      "enable-printing": true,
-      "audio": ["audio/L16;rate=44100"]
-    });
-  }
-
-  // Add VNC-specific settings
-  if (protocol === 'vnc') {
-    Object.assign(connectionSettings, {
-      port: baseSettings.port ? baseSettings.port : 5900,
-      autoretry: 3,
-      color_depth: 24,
-      swap_red_blue: false,
-      connect_timeout: 15
-    });
-  }
-
-  tokenObj = {
-    connection: {
-      type: protocol,
-      guacdHost: guacdHost,
-      guacdPort: parseInt(guacdPort),
-      settings: connectionSettings
-    }
-  };
-
-  return tokenObj;
-}
-
-export async function connectToGuacamole(
-  displayDiv: HTMLDivElement,
-  tokenObj: any,
-  protocol: Protocol,
-  guacdHost: string,
-  guacdPort: string
-) {
-  try {
-    const token = await generateGuacamoleToken(tokenObj);
-    console.log("Token generated, initializing Guacamole...");
-
-    // Initialize Guacamole client
-    const selectedGuacd = `${guacdHost}:${guacdPort}` as const;
-    initializeGuacamoleClient(displayDiv, token, protocol, selectedGuacd);
-  } catch (e) {
-    const error = e as Error;
-    console.error("Failed to connect:", error);
-    alert("Connection failed: " + error.message);
-  }
-}
-
 // Function to initialize Guacamole client
-function initializeGuacamoleClient(
+export function initializeGuacamoleClient(
   displayDiv: HTMLDivElement,
-  token: string,
-  protocol: Protocol,
-  selectedGuacd: SelectedGuacd
+  displayUrl: string,
+  displayToken: string,
 ) {
   try {
     // Create WebSocket tunnel
-    const tunnel = new Guacamole.WebSocketTunnel(`ws://${location.hostname}:${SERVER_PORT}/`);
+    const tunnel = new Guacamole.WebSocketTunnel(displayUrl);
 
     // Set up onuuid event handler to log connection ID
     tunnel.onuuid = function (uuid) {
       console.log("Connection UUID received:", uuid);
       console.log("This UUID can be used to join this session from another client");
-      console.log(`Session registered in registry with guacd routing: ${selectedGuacd || 'auto-detected'}`);
     };
 
     // Create client
@@ -136,12 +28,8 @@ function initializeGuacamoleClient(
     client.onerror = function (error) {
       console.error("Guacamole error:", error);
       let errorMessage = error.message || "Unknown error";
-
-      // Enhanced error messages for common issues
-      if (protocol === 'vnc' && errorMessage.includes("connect")) {
+      if (errorMessage.includes("connect")) {
         errorMessage = "VNC Connection Error: Could not connect to VNC server. Please verify the host is running a VNC server on port 5900.";
-      } else if (protocol === 'rdp' && errorMessage.includes("connect")) {
-        errorMessage = "RDP Connection Error: Could not connect to RDP server. Please verify the host is running and accepting RDP connections.";
       }
 
       alert("Guacamole error: " + errorMessage);
@@ -216,17 +104,27 @@ function initializeGuacamoleClient(
 
     // Connect to the remote desktop
     // Construct connection string, adding audio only if RDP
-    let connectString = `token=${encodeURIComponent(token)}`;
-    if (protocol === 'rdp') {
-      connectString += `&GUAC_AUDIO=audio/L16`;
+    let connectString = `token=${encodeURIComponent(displayToken)}`;
+    try {
+      client.connect(connectString);
+    } catch (error) {
+      console.error("Connect error");
+      if (error instanceof Guacamole.Status) {
+        console.error("Guacamole.status");
+      }
+      throw error;
     }
-    console.log('connecting to ', connectString);
-    client.connect(connectString);
 
     // Wait for the display to show, THEN resize.
     // Add client display to the page
     let displayVisible = false;
+    let lastResize = Date.now();
     client.getDisplay().onresize = (width, height) => {
+      console.log(Date.now() - lastResize);
+      if (Date.now() - lastResize < 1 * 1000) return;
+      lastResize = Date.now();
+
+      console.log("resized", width, height, displayVisible);
       console.log("resized", width, height, displayVisible);
       if (width !== displayDiv.offsetWidth && height !== displayDiv.offsetHeight) {
         currentClient?.sendSize(displayDiv.offsetWidth, displayDiv.offsetHeight);
@@ -253,9 +151,6 @@ function initializeGuacamoleClient(
     });
 
     console.log("Guacamole client initialized and connected");
-    if (protocol !== 'join') {
-      console.log(`Dynamic routing: Connection routed to ${selectedGuacd}`);
-    }
   } catch (e) {
     const error = e as Error;
 
@@ -267,7 +162,6 @@ function initializeGuacamoleClient(
     alert("Error initializing Guacamole: " + error.message);
   }
 }
-
 
 // Function to properly clean up all Guacamole resources
 export function cleanupGuacamole() {
@@ -312,8 +206,3 @@ export function cleanupGuacamole() {
   //   }
   // }, 100);
 }
-
-// Handle page unloads to clean up any active sessions
-window.addEventListener('beforeunload', () => {
-  cleanupGuacamole();
-});

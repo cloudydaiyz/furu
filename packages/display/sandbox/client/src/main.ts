@@ -2,7 +2,7 @@ import './style.css'
 import { BaseConnectionSettings, cleanupGuacamole, connectToGuacamole, createNewConnectionToken } from './guacamole/client.ts';
 
 const displayDiv = document.getElementById("display") as HTMLDivElement;
-const VNC_HOSTNAME = import.meta.env.VITE_HOSTNAME as string | undefined;
+const VNC_HOSTNAME = import.meta.env.VITE_VNC_HOSTNAME as string | undefined;
 const VNC_PASSWORD = import.meta.env.VITE_VNC_PASSWORD as string | undefined;
 if (!VNC_HOSTNAME || !VNC_PASSWORD) {
   throw new Error("Environment variable unset. Set VITE_HOSTNAME and rebuild this application.")
