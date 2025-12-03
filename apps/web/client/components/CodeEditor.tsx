@@ -5,9 +5,9 @@ import { EditorState, Transaction } from '@codemirror/state';
 import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { basicSetup } from 'codemirror';
-import React, { memo, RefObject, useEffect, useRef } from 'react';
+import { memo, RefObject, useEffect, useRef } from 'react';
 import "./CodeEditor.css";
-import { editable, readOnly, lineStatusGutter } from './gutter';
+import { editable, readOnly, lineStatusGutter } from '../../lib/gutter';
 
 type EditorProps = {
   editorRef: RefObject<EditorView | null>,

@@ -7,6 +7,10 @@ async function launchController() {
 
   runServer({
     accessKey: CONTROLLER_ACCESS_KEY,
+    onClientOperation: async (op) => {
+      console.log("process.env");
+      console.log(process.env);
+    }
   });
 }
 

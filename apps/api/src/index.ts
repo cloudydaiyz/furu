@@ -5,6 +5,8 @@ import { type ApiClientOperation, type ApiServerOperation } from '@cloudydaiyz/f
 
 const API_PORT = 4000;
 
+console.log(process.env);
+
 async function launchApi() {
   const WEB_HOST = process.env.FURU_WEB_HOST;
   const API_ACCESS_KEY = process.env.FURU_API_ACCESS_KEY;
@@ -23,6 +25,7 @@ async function launchApi() {
       ],
     }
   });
+  console.log('CONTROLLER_ACCESS_KEY', CONTROLLER_ACCESS_KEY);
 
   io.on("connection", (socket) => {
     console.log("New connection!");
@@ -49,6 +52,7 @@ async function launchApi() {
         host: CONTROLLER_HOST,
         accessKey: CONTROLLER_ACCESS_KEY,
         onServerOperation: async (operation) => {
+          console.log('controller server operation', operation);
           switch (operation.opCode) {
             case 1:
               break;

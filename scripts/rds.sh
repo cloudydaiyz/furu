@@ -4,6 +4,8 @@
 # This script includes the commands that are ran when booting a AWS EC2 virtual machine (AL2023)
 # for it to run as a remote desktop server.
 
+set -euo pipefail
+
 ## Install the GNOME desktop environment and related packages
 sudo dnf groupinstall "Desktop" -y
 
@@ -71,4 +73,3 @@ sudo chown ec2-user "/home/ec2-user/.config/tigervnc/passwd"
 echo Starting the VNC server...
 sudo systemctl start vncserver@:1
 echo Started VNC server
-

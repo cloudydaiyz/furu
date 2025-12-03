@@ -1,7 +1,7 @@
 "use client";
 
 import { CodeEditor } from "@/client/components/CodeEditor";
-import { clearLineStatusGutter, getCodeFromEditor, updateLineStatusGutter } from "@/client/components/gutter";
+import { clearLineStatusGutter, getCodeFromEditor, updateLineStatusGutter } from "@/lib/gutter";
 import { useOperations } from "@/client/hooks/useOperations";
 import { dfmt, MAX_LOG_ENTRIES, SAMPLE_WORKFLOW_TITLES } from "@/lib/constants";
 import { cn, getSelectedElementCommand, getSelectedActionLabel, findLastLine, SampleWorkflow, getWorkflowContent } from "@/lib/util";
