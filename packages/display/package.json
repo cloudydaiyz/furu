@@ -1,0 +1,29 @@
+{
+  "name": "@cloudydaiyz/furu-display",
+  "description": "Apache Guacamole utilities for the furu project",
+  "version": "1.0.0",
+  "author": "Kylan Duncan",
+  "keywords": [
+    "furu",
+    "playwright"
+  ],
+  "license": "ISC",
+  "scripts": {
+    "build": "tsc"
+  },
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "packageManager": "pnpm@10.12.3",
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "guacamole-lite": "^1.2.0"
+  }
+}

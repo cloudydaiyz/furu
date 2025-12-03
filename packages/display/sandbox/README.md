@@ -47,18 +47,18 @@ Same instructions as [above](#creating-the-remote-desktop-server).
 
 ### Running the Server
 
-1. Run `npm --prefix apps/server run guacd:up`.
-2. Run `npm --prefix apps/server start`.
+1. Run `npm run guacd:up`.
+2. Run `npm run server:start`.
 
 ### Running the Client
 
-1. Run `npm --prefix apps/server start`.
+1. Run `npm run client:dev`.
 
 ### Shutting down
 
 1. Ensure the client and server applications, and all Guacamole connections are closed.
 2. Run `rds/drds.sh $INSTANCE_ID`.
-3. Run `npm --prefix apps/server run guacd:down`.
+3. Run `npm run guacd:down`.
 
 ## Troubleshooting
 
