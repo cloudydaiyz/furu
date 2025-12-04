@@ -5,7 +5,16 @@
   "license": "ISC",
   "scripts": {
     "guacd:up": "docker run --name guacd -d -p $GUACD_PORT:4822 guacamole/guacd",
-    "guacd:down": "docker stop guacd && docker rm guacd"
+    "guacd:debug": "docker run --name guacd -d -p $GUACD_PORT:4822 -e LOG_LEVEL=debug guacamole/guacd",
+    "guacd:down": "docker stop guacd && docker rm guacd",
+    "build": "pnpm run -r build",
+    "build:local": "pnpm run -r --filter '!@cloudydaiyz/furu-controller-app' build",
+    "deploy:api": "pnpm deploy --filter=@cloudydaiyz/furu-api-app --prod prod/api",
+    "deploy:web": "pnpm deploy --filter=@cloudydaiyz/furu-web-app --prod prod/web",
+    "deploy:display": "pnpm deploy --filter=@cloudydaiyz/furu-display-app --prod prod/display",
+    "deploy:local": "pnpm deploy:api && pnpm deploy:web && pnpm deploy:display",
+    "deploy:controller": "pnpm deploy --filter=@cloudydaiyz/furu-controller-app --prod prod/controller",
+    "start:controller": "pm2 start prod/controller/dist/index.js --name 'controller' --update-env"
   },
   "packageManager": "pnpm@10.12.3"
 }

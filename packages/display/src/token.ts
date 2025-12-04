@@ -7,7 +7,10 @@ export interface BaseConnectionSettings {
   hostname?: string,
   username?: string,
   password?: string,
-  port?: number,
+  port?: number, // default: 5900
+  width?: number,
+  height?: number,
+  dpi?: number, // default: 96
 }
 
 export function createJoinConnectionToken(connectionId: string, readOnly = false) {
@@ -40,8 +43,8 @@ export function createNewConnectionToken(
     hostname: baseSettings.hostname,
     username: baseSettings.username,
     password: baseSettings.password,
-    width: 1000,
-    height: 900,
+    width: baseSettings.width,
+    height: baseSettings.height,
   };
 
   if (protocol === 'rdp') {
@@ -59,7 +62,8 @@ export function createNewConnectionToken(
   // Add VNC-specific settings
   if (protocol === 'vnc') {
     Object.assign(connectionSettings, {
-      port: baseSettings.port ? baseSettings.port : 5900,
+      port: baseSettings.port,
+      dpi: baseSettings.dpi,
       autoretry: 3,
       color_depth: 24,
       swap_red_blue: false,
@@ -75,6 +79,7 @@ export function createNewConnectionToken(
       settings: connectionSettings
     }
   };
+  console.log('tokenObj', tokenObj);
 
   return tokenObj;
 }

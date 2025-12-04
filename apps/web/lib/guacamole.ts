@@ -80,6 +80,23 @@ export function initializeGuacamoleClient(
       (e) => client.sendMouseState((e as Guacamole.Mouse.Event).state)
     );
 
+    // Ensure the mouse is invisible when leaving the div
+    // Without this, there's a delay after the mouse leaves the display div before
+    // making the mouse invisible
+    document.addEventListener('mousemove', (event) => {
+      const rect = displayDiv.getBoundingClientRect();
+      if (
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom
+      ) {
+        client.getDisplay().showCursor(true);
+      } else {
+        client.getDisplay().showCursor(false);
+      }
+    });
+
     // Set up keyboard
     // const keyboard = new Guacamole.Keyboard(window);
     const keyboard = new Guacamole.Keyboard(window.document);
@@ -104,7 +121,8 @@ export function initializeGuacamoleClient(
 
     // Connect to the remote desktop
     // Construct connection string, adding audio only if RDP
-    let connectString = `token=${encodeURIComponent(displayToken)}`;
+    let connectString = `token=${encodeURIComponent(displayToken)}&dpi=120`;
+    console.log("connectString", connectString)
     try {
       client.connect(connectString);
     } catch (error) {
@@ -118,23 +136,21 @@ export function initializeGuacamoleClient(
     // Wait for the display to show, THEN resize.
     // Add client display to the page
     let displayVisible = false;
-    let lastResize = Date.now();
-    client.getDisplay().onresize = (width, height) => {
-      console.log(Date.now() - lastResize);
-      if (Date.now() - lastResize < 1 * 1000) return;
-      lastResize = Date.now();
 
-      console.log("resized", width, height, displayVisible);
-      console.log("resized", width, height, displayVisible);
+    setInterval(() => {
+      const width = client.getDisplay().getWidth();
+      const height = client.getDisplay().getHeight();
+
       if (width !== displayDiv.offsetWidth && height !== displayDiv.offsetHeight) {
         currentClient?.sendSize(displayDiv.offsetWidth, displayDiv.offsetHeight);
       }
 
+      // if (!displayVisible) {
       if (!displayVisible && width === displayDiv.offsetWidth && height === displayDiv.offsetHeight) {
         displayDiv.appendChild(client.getDisplay().getElement());
         displayVisible = true;
       }
-    }
+    }, 1000);
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {

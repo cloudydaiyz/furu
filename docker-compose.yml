@@ -1,0 +1,32 @@
+services:
+  guacd:
+    image: guacamole/guacd:1.5.5
+    container_name: guacd
+    restart: unless-stopped
+    expose: [ "4822" ]
+
+  furu-web:
+    build:
+      context: .
+      target: web
+    container_name: furu-web
+    depends_on: [ furu-api ]
+    # environment:
+    ports: [ "3000:3000" ]
+
+  furu-api:
+    build:
+      context: .
+      target: api
+    container_name: furu-api
+    depends_on: [ furu-display ]
+    # environment:
+    ports: [ "4000:4000" ]
+
+  furu-display:
+    build:
+      context: .
+      target: display
+    container_name: furu-display
+    # environment:
+    ports: [ "9091:9091" ]

@@ -2,7 +2,19 @@
 
 import GuacamoleLite from "guacamole-lite";
 
-export function runGuacamoleServer(port: number, guacdHost: string, guacdPort: number, encryptionKey: string): any {
+export interface VNCSettings {
+  width?: number, // default: 1024,
+  height?: number, // default: 768,
+  dpi?: number, // default: 96
+}
+
+export function runGuacamoleServer(
+  port: number,
+  guacdHost: string,
+  guacdPort: number,
+  encryptionKey: string,
+  vncSettings?: VNCSettings
+): any {
   // GuacamoleLite creates its own WebSocket server on this port
   const websocketOptions = { port };
 
@@ -17,7 +29,9 @@ export function runGuacamoleServer(port: number, guacdHost: string, guacdPort: n
       cypher: 'AES-256-CBC',
       key: encryptionKey,
     },
-    connectionDefaultSettings: {},
+    connectionDefaultSettings: {
+      vnc: vncSettings,
+    },
     log: {
       level: 'DEBUG',
     },

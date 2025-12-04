@@ -5,6 +5,8 @@
 
 set -euo pipefail
 
+scripts/seed-ssm.sh
+
 ## Create EC2 instance
 ## NOTE: Remote desktop just barely runs with t2.medium
 ## https://docs.aws.amazon.com/cli/latest/userguide/cli-services-ec2-instances.html 

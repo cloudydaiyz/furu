@@ -32,7 +32,7 @@ const clientOptions = {
   connectionDefaultSettings: {
     rdp: {
       'audio': ['audio/L16']
-    }
+    },
   },
   log: {
     level: 'DEBUG',

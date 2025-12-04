@@ -114,6 +114,9 @@ git clone https://${GITHUB_USER}:${GITHUB_PAT}@github.com/cloudydaiyz/furu.git a
 cd app
 git checkout $COMMIT_ID
 
-source scripts/apps/controller.sh
+pnpm install --frozen-lockfile
+pnpm build
+pnpm deploy:controller
+pnpm start:controller
 
 echo "App started!" | sudo tee -a /var/log/user-data-status

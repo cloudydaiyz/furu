@@ -10,7 +10,17 @@ export async function launchDisplay() {
   const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
   assert(GUACD_HOST && GUACD_PORT && ENCRYPTION_KEY);
 
-  runGuacamoleServer(DISPLAY_PORT, GUACD_HOST, +GUACD_PORT, ENCRYPTION_KEY);
+  runGuacamoleServer(
+    DISPLAY_PORT,
+    GUACD_HOST,
+    +GUACD_PORT,
+    ENCRYPTION_KEY,
+    {
+      dpi: 120,
+      width: 1000,
+      height: 1000,
+    }
+  );
 }
 
 launchDisplay();
