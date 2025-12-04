@@ -1,6 +1,6 @@
 # furu
 
-**furu** is a web-based Playwright test editor.
+**furu** is a web-based platform for Playwright test creation.
 
 ## Prerequisites
 

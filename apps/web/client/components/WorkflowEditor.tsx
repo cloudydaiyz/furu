@@ -94,7 +94,7 @@ function InspectElementTab({
           </h4>
           <button
             type="button"
-            className={cn("w-fit h-fit px-2 py-1 rounded-md bg-stone-700 hover:bg-stone-800", !selectedElement && "invisible")}
+            className={cn("w-fit h-fit px-2 py-1  bg-stone-700 hover:bg-stone-800", !selectedElement && "invisible")}
             onClick={() => setSelectedElement(null)}
           >
             Deselect
@@ -109,7 +109,7 @@ function InspectElementTab({
                   ref={selectActionRef}
                   id="action-select"
                   name="action-select"
-                  className="bg-black/20 rounded-md py-1 px-2 w-40"
+                  className="bg-black/20  py-1 px-2 w-40"
                   onInput={(e) => {
                     const value = e.currentTarget.value;
                     setSelectedAction(value === "null" ? null : value as SelectedElementAction);
@@ -133,7 +133,7 @@ function InspectElementTab({
                   ref={selectLocatorRef}
                   id="locator-select"
                   name="locator-select"
-                  className="bg-black/20 rounded-md py-1 px-2 w-100"
+                  className="bg-black/20  py-1 px-2 w-100"
                   onInput={(e) => {
                     const value = e.currentTarget.value;
                     setSelectedLocator(value === "null" ? null : value);
@@ -163,7 +163,7 @@ function InspectElementTab({
                 <button
                   ref={copyBtnRef}
                   type="button"
-                  className="w-fit px-2 py-1 rounded-md bg-white text-stone-700 hover:bg-stone-200"
+                  className="w-fit px-2 py-1  bg-white text-stone-700 hover:bg-stone-200"
                   onClick={async () => {
                     if (selectedElementCommand) {
                       await navigator.clipboard.writeText(selectedElementCommand);
@@ -375,7 +375,7 @@ export default function WorkflowEditor({
           <div className="flex items-center gap-4 justify-end w-full h-fit">
             <select
               name="select-content"
-              className="h-fit w-40 bg-stone-700 px-2 py-2 rounded-md enabled:hover:bg-stone-800"
+              className="h-fit w-40 bg-stone-700 px-2 py-2  enabled:hover:bg-stone-800"
               onInput={(e) => {
                 const title = e.currentTarget.value as SampleWorkflow;
                 const newContent = getWorkflowContent(title);
@@ -398,7 +398,7 @@ export default function WorkflowEditor({
               }
             </select>
             <button
-              className="h-fit w-40 bg-stone-700 px-2 py-2 rounded-md hover:bg-stone-800"
+              className="h-fit w-40 bg-stone-700 px-2 py-2  hover:bg-stone-800"
               onClick={() => {
                 sendClientOperation({
                   opCode: 5,
@@ -410,7 +410,7 @@ export default function WorkflowEditor({
               Reset Context
             </button>
             <button
-              className="h-fit w-40 bg-stone-700 px-2 py-2 rounded-md hover:bg-stone-800"
+              className="h-fit w-40 bg-stone-700 px-2 py-2  hover:bg-stone-800"
               onClick={() => {
                 const view = editorRef.current;
                 if (view) {

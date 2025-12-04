@@ -1,6 +1,4 @@
-export const hackerNewsCwv = `/** 
- * @import * as index from "./index" 
- */
+export const hackerNewsCwv = `/** @import * as index from "./index" */
 
 // Set up page listeners
 page.on("console", async (msg) => {
@@ -28,7 +26,6 @@ const scriptSrc = await fetch("https://unpkg.com/web-vitals@4/dist/web-vitals.ii
 const scriptBody = await scriptSrc.text();
 
 // Inject the script into the page
-await page.addInitScript({ content: scriptBody });
 await page.addInitScript(
   async ([scriptBody]) => {
     window.addEventListener("DOMContentLoaded", async () => {
@@ -75,7 +72,7 @@ await page.addInitScript(
 // Go to Hacker News, record FCP and TTFB
 await page.goto("https://news.ycombinator.com/newest");
 
-// Page click to record LCP and FID
+// Page click to record LCP
 await page.waitForLoadState('domcontentloaded');
 console.log("Page click");
 await page.locator("input[type=text]").click();
