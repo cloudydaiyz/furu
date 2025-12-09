@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 # drds.sh - Delete Remote Desktop Server
-# Usage: drds.sh <instance-id>
-#        drds.sh $INSTANCE_ID
+# Deletes a pre-provisioned EC2 instance with ID $INSTANCE_ID
 
 set -euo pipefail
 

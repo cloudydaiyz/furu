@@ -1,0 +1,9 @@
+# TODO: Fix rds3.sh
+# BROKEN: This currently isn't working. Do not use!
+
+FROM ubuntu:24.04
+COPY . /app
+WORKDIR /app
+RUN chmod +x /app/scripts/rds3.sh
+EXPOSE 8124 5901
+CMD [ "/app/scripts/rds3.sh" ]

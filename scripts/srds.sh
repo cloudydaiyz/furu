@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# srds.sh - Setup Remote Desktop Server
+# Sets up a pre-provisioned an EC2 instance
+
 set -euo pipefail
 
 scp -i $GUAC_KEY -o StrictHostKeyChecking=no "scripts/rds.sh" "ubuntu@$PUBLIC_DNS:~"

@@ -5,8 +5,8 @@
 # for it to run as a remote desktop server. This must be ran as user `ubuntu`.
 # 
 # Prerequisites: 
-# - VM must have access to the ssm:GetParameter action
-# - VM must have access to the following parameters: 
+# - EC2 instance must have access to the ssm:GetParameter action
+# - EC2 instance must have access to the following parameters: 
 #   - /furu/github-user - GitHub Username
 #   - /furu/github-pat - GitHub PAT
 #   - /furu/commit-id - GitHub Commit ID for furu (or "main")
@@ -69,7 +69,7 @@ gsettings set org.gnome.desktop.session idle-delay 0
 gsettings set org.gnome.desktop.screensaver lock-enabled false
 
 # Setup TigerVNC standalone service
-time sudo apt install -y tigervnc-standalone-server tigervnc-xorg-extension tigervnc-viewer
+sudo apt install -y tigervnc-standalone-server tigervnc-xorg-extension tigervnc-viewer
 
 mkdir -p "$HOME/.vnc"
 touch "$HOME/.vnc/passwd"

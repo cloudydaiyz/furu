@@ -1,5 +1,3 @@
-# TODO: FIX
-
 FROM node:22-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
@@ -10,13 +8,11 @@ COPY . /usr/src/app
 WORKDIR /usr/src/app
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 RUN pnpm build:local
-RUN pnpm deploy --filter="@cloudydaiyz/furu-web-app" --prod /prod/web
 RUN pnpm deploy --filter="@cloudydaiyz/furu-api-app" --prod /prod/api
 RUN pnpm deploy --filter="@cloudydaiyz/furu-display-app" --prod /prod/display
 
-FROM base AS web
-COPY --from=build /prod/web /prod/web
-WORKDIR /prod/web
+FROM build AS web
+WORKDIR /usr/src/app/apps/web
 EXPOSE 3000
 CMD [ "pnpm", "start" ]
 

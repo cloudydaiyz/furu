@@ -13,6 +13,7 @@ export default async function Page() {
   const DISPLAY_HOST = process.env.FURU_DISPLAY_HOST;
 
   if (!API_HOST || !API_ACCESS_KEY || !DISPLAY_HOST) {
+    console.log(process.env);
     throw new Error("Environment variables undefined");
   }
 
