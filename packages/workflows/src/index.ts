@@ -3,7 +3,8 @@ import prettier from "prettier";
 import fs from "fs/promises";
 
 export const WORKFLOW_TEST_TEMPLATE = [
-  "import { test } from '@playwright/test';",
+  "import { test, expect } from '@playwright/test';",
+  "import { injectAxe, checkA11y, getAxeResults } from 'axe-playwright'",
   "",
   'test("workflow", async ({ page }) => {',
   "});",
