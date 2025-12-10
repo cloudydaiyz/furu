@@ -2,14 +2,6 @@ import path from "path";
 import prettier from "prettier";
 import fs from "fs/promises";
 
-export const WORKFLOW_TEST_TEMPLATE = [
-  "import { test, expect } from '@playwright/test';",
-  "import { injectAxe, checkA11y, getAxeResults } from 'axe-playwright'",
-  "",
-  'test("workflow", async ({ page }) => {',
-  "});",
-];
-
 export function getWorkflowTitle(filename: string) {
   return filename.substring(0, filename.indexOf("."));
 }
@@ -28,8 +20,18 @@ export async function getWorkflowsFromDir(dir: string): Promise<Map<string, stri
   return map;
 }
 
-export async function convertWorkflowToTest(content: string): Promise<string> {
-  const template = WORKFLOW_TEST_TEMPLATE.slice();
+interface ConvertWorkflowOptions {
+  expectFail?: boolean;
+}
+
+export async function convertWorkflowToTest(content: string, options: ConvertWorkflowOptions = {}): Promise<string> {
+  const template = [
+    "import { test, expect } from '@playwright/test';",
+    "import { injectAxe, checkA11y, getAxeResults } from 'axe-playwright'",
+    "",
+    `test${options.expectFail ? ".fail" : ""}("workflow", async ({ page }) => {`,
+    "});",
+  ];
   template.splice(4, 0, content);
   return prettier.format(template.join("\n"), { parser: "typescript" });
 }

@@ -11,18 +11,21 @@ export const EXAMPLE_GENERATED_DIR = path.join(__dirname, "..", "examples", "gen
 
   for (const [filename, content] of map) {
     if (filename === "index.d.ts") continue;
+    const expectFail = filename === "hacker-news-accessibility.mjs";
     const workflowTitle = getWorkflowTitle(filename);
 
     console.log();
     console.log("--------------------------------");
     console.log(`filename: ${filename}`);
     console.log(`workflow title: ${workflowTitle}`);
-    console.log(`content:\n${content}`);
+    // console.log(`content:\n${content}`);
 
     console.log();
     console.log("--------------------------------");
-    const parsed = await convertWorkflowToTest(content);
-    console.log(`parsed:\n${parsed}`);
+    const parsed = await convertWorkflowToTest(content, { expectFail });
+    if (filename.includes("hacker-news")) {
+      console.log(`parsed:\n${parsed}`);
+    }
     console.log("--------------------------------");
     console.log();
 

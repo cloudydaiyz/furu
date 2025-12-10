@@ -14,7 +14,7 @@ async function launchApi() {
   const GUACD_HOST = process.env.GUACD_HOST;
   const GUACD_PORT = process.env.GUACD_PORT;
   const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
-  const VNC_PASSWORD = process.env.VITE_VNC_PASSWORD;
+  const VNC_PASSWORD = process.env.VNC_PASSWORD;
   assert(
     GUACD_HOST && GUACD_PORT && ENCRYPTION_KEY
     && WEB_HOST && API_ACCESS_KEY && CONTROLLER_HOST && CONTROLLER_ACCESS_KEY

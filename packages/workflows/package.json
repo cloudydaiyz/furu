@@ -1,7 +1,7 @@
 {
   "name": "@cloudydaiyz/furu-workflows",
   "description": "Apache Guacamole utilities for the furu project",
-  "version": "0.0.2",
+  "version": "0.0.5",
   "author": "Kylan Duncan",
   "keywords": [
     "furu",
