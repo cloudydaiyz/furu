@@ -30,6 +30,6 @@ export async function getWorkflowsFromDir(dir: string): Promise<Map<string, stri
 
 export async function convertWorkflowToTest(content: string): Promise<string> {
   const template = WORKFLOW_TEST_TEMPLATE.slice();
-  template.splice(3, 0, content);
+  template.splice(4, 0, content);
   return prettier.format(template.join("\n"), { parser: "typescript" });
 }
