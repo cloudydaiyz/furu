@@ -33,21 +33,16 @@ export const SETUP_SCRIPT = [
   'const { injectAxe, checkA11y, getAxeResults } = require("axe-playwright")',
 ].join('\n');
 
+/** 
+ * Wraps all scripts to be executed so that workflows can get past the static type checking 
+ * from esprima (e.g. undefined page variable)
+ */
 export const WORKFLOW_SCRIPT_TEMPLATE: WorkflowTemplate = {
   wrapper: [
     "async function workflow(page) {",
     "}",
   ],
   workflowInsert: 1,
-}
-
-export const WORKFLOW_TEST_TEMPLATE: WorkflowTemplate = {
-  wrapper: [
-    "import { test } from '@playwright/test';",
-    `test("workflow", async ({ page }) => {`,
-    "});",
-  ],
-  workflowInsert: 2,
 }
 
 export function createVMContext(ctx: VMContext) {

@@ -1,9 +1,6 @@
 import { BlockExecutionStatus, SelectedElementAction } from '@cloudydaiyz/furu-api';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { SAMPLE_WORKFLOWS } from './constants';
-
-export type SampleWorkflow = keyof typeof SAMPLE_WORKFLOWS;
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -76,8 +73,4 @@ export function findLastLine(block: BlockExecutionStatus): number | null {
     }
   }
   return max;
-}
-
-export function getWorkflowContent(title: SampleWorkflow): string {
-  return SAMPLE_WORKFLOWS[title];
 }

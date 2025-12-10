@@ -11,6 +11,7 @@ declare global {
   export const test: typeof playwrightTest.test;
   export const expect: typeof playwrightTest.expect;
   export type Locator = playwrightTest.Locator;
+
   export const injectAxe: typeof axePlaywright.injectAxe;
   export const checkA11y: typeof axePlaywright.checkA11y;
   export const getAxeResults: typeof axePlaywright.getAxeResults;

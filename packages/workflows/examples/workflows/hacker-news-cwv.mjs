@@ -1,5 +1,3 @@
-export const hackerNewsCwv = `/** @import * as index from "./index" */
-
 // Set up page listeners
 page.on("console", async (msg) => {
   if (msg.type() === "trace" || msg.type() === "error") {
@@ -14,7 +12,7 @@ const badMetrics = [];
  * @param {boolean} good 
  */
 function validateMetric(name, good) {
-  console.log(\`\${name} valid: \${good}\`);
+  console.log(`${name} valid: ${good}`);
   if (!good) {
     badMetrics.push(name);
   }
@@ -26,6 +24,7 @@ const scriptSrc = await fetch("https://unpkg.com/web-vitals@4/dist/web-vitals.ii
 const scriptBody = await scriptSrc.text();
 
 // Inject the script into the page
+await page.addInitScript({ content: scriptBody });
 await page.addInitScript(
   async ([scriptBody]) => {
     window.addEventListener("DOMContentLoaded", async () => {
@@ -72,7 +71,7 @@ await page.addInitScript(
 // Go to Hacker News, record FCP and TTFB
 await page.goto("https://news.ycombinator.com/newest");
 
-// Page click to record LCP
+// Page click to record LCP and FID
 await page.waitForLoadState('domcontentloaded');
 console.log("Page click");
 await page.locator("input[type=text]").click();
@@ -90,4 +89,4 @@ validateMetric("Page load", navTiming.loadEventEnd < 2000);
 // Page unload to record INP and CLS
 console.log("Page unload");
 await page.close();
-expect(badMetrics).toHaveLength(0);`
+expect(badMetrics).toHaveLength(0);

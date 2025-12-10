@@ -1,5 +1,3 @@
-/** @import * as index from "./index" */
-
 await page.goto("https://news.ycombinator.com/newest");
 
 let numArticlesSorted = 0;

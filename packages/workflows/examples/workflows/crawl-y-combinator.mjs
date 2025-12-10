@@ -1,10 +1,4 @@
-export const crawlYCombinator = `// Original at: https://github.com/mxschmitt/try-playwright/blob/main/frontend/src/examples/javascript/crawl-y-combinator.js
-
-// @ts-check
-
-/**
- * @import * as index from "./index"
- */
+// Original at: https://github.com/mxschmitt/try-playwright/blob/main/frontend/src/examples/javascript/crawl-y-combinator.js
 
 await page.goto('https://news.ycombinator.com');
 
@@ -16,7 +10,7 @@ for (let i = 0; i < await entries.count(); i++) {
   // Query for the next title element on the page
   const title = entries.nth(i).locator('td.title .titleline > a');
   // Write the entry to the console
-  console.log(\`\${i + 1}: \${await title.innerText()}\`);
+  console.log(`${i + 1}: ${await title.innerText()}`);
 }
 
-await page.screenshot({ path: 'Y-Combinator.png' });`
+await page.screenshot({ path: 'Y-Combinator.png' });

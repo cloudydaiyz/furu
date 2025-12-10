@@ -1,17 +1,4 @@
-export const recordVideo = `// Original at: https://github.com/mxschmitt/try-playwright/blob/main/frontend/src/examples/javascript/record-video.js
-
-// @ts-check
-
-/**
- * @import * as index from "./index"
- */
-
-// const browser = await chromium.launch();
-// const context = await browser.newContext({
-//   recordVideo: {
-//     dir: 'videos/'
-//   }
-// });
+// Original at: https://github.com/mxschmitt/try-playwright/blob/main/frontend/src/examples/javascript/record-video.js
 
 for (let i = 0; i < 3; i++) {
   await page.goto('https://news.ycombinator.com/');
@@ -22,4 +9,4 @@ for (let i = 0; i < 3; i++) {
   await page.getByRole('link', { name: 'show' }).click();
   await page.getByRole('link', { name: 'jobs' }).click();
   await page.getByRole('link', { name: 'login' }).click();
-}`
+}

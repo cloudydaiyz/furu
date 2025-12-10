@@ -3,12 +3,11 @@
 import { CodeEditor } from "@/client/components/CodeEditor";
 import { clearLineStatusGutter, getCodeFromEditor, updateLineStatusGutter } from "@/lib/gutter";
 import { useOperations } from "@/client/hooks/useOperations";
-import { dfmt, MAX_LOG_ENTRIES, SAMPLE_WORKFLOW_TITLES } from "@/lib/constants";
-import { cn, getSelectedElementCommand, getSelectedActionLabel, findLastLine, SampleWorkflow, getWorkflowContent } from "@/lib/util";
-import { todoMvc } from "@/lib/workflows/todo-mvc";
+import { dfmt, MAX_LOG_ENTRIES } from "@/lib/constants";
+import { cn, getSelectedElementCommand, getSelectedActionLabel, findLastLine } from "@/lib/util";
 import { ExecutionRange, ExecutionStatus, LogEntry, SELECTED_ELEMENT_ACTIONS, SelectedElementAction, SelectedElementOptions } from "@cloudydaiyz/furu-api";
 import { EditorView } from "@codemirror/view";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cleanupGuacamole, initializeGuacamoleClient } from "@/lib/guacamole";
 
 type WorkflowEditorTab = "logs" | "elements";
@@ -205,12 +204,16 @@ interface WorkflowEditorProps {
   apiUrl: string,
   apiAccessKey: string,
   displayUrl: string,
+  workflowMap: Map<string, string>,
+  defaultWorkflow?: string,
 }
 
 export default function WorkflowEditor({
   apiUrl,
   apiAccessKey,
-  displayUrl
+  displayUrl,
+  workflowMap,
+  defaultWorkflow,
 }: WorkflowEditorProps) {
   const editorRef = useRef<EditorView | null>(null);
   const consoleRef = useRef<HTMLDivElement | null>(null);
@@ -223,7 +226,7 @@ export default function WorkflowEditor({
   const [tab, setTab] = useState<WorkflowEditorTab>("logs");
 
   const [displayConnected, setDisplayConnected] = useState(false);
-  const [content, setContent] = useState(todoMvc);
+  const [content, setContent] = useState(defaultWorkflow || "");
   const [resetContext, setResetContext] = useState(true);
   const [executionStatus, setExecutionStatus] = useState<ExecutionStatus>('stopped');
   const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
@@ -233,6 +236,8 @@ export default function WorkflowEditor({
   const [selectedAction, setSelectedAction] = useState<SelectedElementAction | null>(null);
   const [selectedLocator, setSelectedLocator] = useState<string | null>(null);
   const [selectedElementCommand, setSelectedElementCommand] = useState<string | null>(null);
+
+  const workflowTitles = useMemo(() => workflowMap.keys().toArray(), [workflowMap]);
 
   const selectTab = (tab: WorkflowEditorTab) => {
     if (tab === "logs") {
@@ -377,8 +382,10 @@ export default function WorkflowEditor({
               name="select-content"
               className="h-fit w-40 bg-stone-700 px-2 py-2  enabled:hover:bg-stone-800"
               onInput={(e) => {
-                const title = e.currentTarget.value as SampleWorkflow;
-                const newContent = getWorkflowContent(title);
+                const title = e.currentTarget.value;
+                const newContent = workflowMap.get(title);
+                if (!newContent) return;
+
                 setContent(newContent);
                 if (editorRef.current) {
                   editorRef.current.dispatch({
@@ -390,7 +397,7 @@ export default function WorkflowEditor({
               disabled={executionStatus === "running"}
             >
               {
-                SAMPLE_WORKFLOW_TITLES.map(title => (
+                workflowTitles.map(title => (
                   <option key={title} value={title}>
                     {title}
                   </option>

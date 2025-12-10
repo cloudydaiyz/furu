@@ -13,44 +13,47 @@ apt update && apt-get install -y curl
 
 echo "Setting up VNC + Remote Desktop Server..." | tee -a /var/log/user-data-status
 
-# Setup GNOME (without initial setup)
-apt install ubuntu-gnome-desktop tigervnc-standalone-server \
-  tigervnc-xorg-extension tigervnc-viewer firefox -y
-apt remove --purge gnome-initial-setup -y
+# Install minimal GNOME desktop + VNC + Xvfb (virtual X server)
+apt install -y \
+  xvfb \
+  gnome-shell \
+  gnome-session \
+  dbus \
+  dbus-x11 \
+  tigervnc-standalone-server \
+  tigervnc-common \
+  firefox \
+  xterm
 
-# From systemctl:
-# The unit files have no installation config (WantedBy=, RequiredBy=, 
-# UpheldBy=, Also=, or Alias= settings in the [Install] section, and
-# DefaultInstance=  for template units). 
-# This means they are not meant to be enabled or disabled # using systemctl.
-# systemctl enable gdm
+# Create non-root user for running the desktop
+useradd -m -s /bin/bash ubuntu || true
 
-systemctl start gdm
+# Setup VNC password for ubuntu user
+mkdir -p /home/ubuntu/.vnc
+echo "${VNC_PASSWORD:-password}" | vncpasswd -f > /home/ubuntu/.vnc/passwd
+chmod 600 /home/ubuntu/.vnc/passwd
+chown -R ubuntu:ubuntu /home/ubuntu/.vnc
 
-# Disable lock screen, screen blanking, and screen saver
-gsettings set org.gnome.desktop.lockdown disable-lock-screen true
-gsettings set org.gnome.desktop.session idle-delay 0
-gsettings set org.gnome.desktop.screensaver lock-enabled false
+# Create VNC startup script
+cat > /home/ubuntu/.vnc/xstartup << 'VNCEOF'
+#!/bin/bash
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+export XDG_SESSION_TYPE=x11
+exec dbus-launch gnome-session
+VNCEOF
+chmod +x /home/ubuntu/.vnc/xstartup
+chown ubuntu:ubuntu /home/ubuntu/.vnc/xstartup
 
-# Setup TigerVNC standalone service
-mkdir -p "$HOME/.vnc"
-touch "$HOME/.vnc/passwd"
-echo $VNC_PASSWORD | vncpasswd -f | tee "$HOME/.vnc/passwd"
-chmod 600 "$HOME/.vnc/passwd"
-chown ubuntu "$HOME/.vnc/passwd"
-
-export DISPLAY=:1
-export XAUTHORITY="$HOME/.Xauthority" 
-
-echo Starting VNC server
-vncserver \
--localhost no \
--name gnome \
--SecurityTypes vncauth,tlsvnc \
--geometry 1920x1080 \
--depth 32 \
-$DISPLAY
-echo Started VNC server
+# Start VNC server as ubuntu user
+echo "Starting VNC server..."
+sudo -u ubuntu vncserver \
+  -localhost no \
+  -name gnome \
+  -SecurityTypes vncauth,tlsvnc \
+  -geometry 1920x1080 \
+  -depth 24 \
+  :1
 
 echo "Starting the app..." | tee -a /var/log/user-data-status
 

@@ -1,0 +1,28 @@
+{
+  "name": "@cloudydaiyz/furu-workflows",
+  "description": "Apache Guacamole utilities for the furu project",
+  "version": "0.0.1",
+  "author": "Kylan Duncan",
+  "keywords": [
+    "furu",
+    "playwright"
+  ],
+  "files": [
+    "dist"
+  ],
+  "license": "ISC",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "node dist/index.test.js"
+  },
+  "packageManager": "pnpm@10.12.3",
+  "devDependencies": {
+    "@types/node": "^24.10.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.57.0",
+    "prettier": "^3.7.4"
+  }
+}

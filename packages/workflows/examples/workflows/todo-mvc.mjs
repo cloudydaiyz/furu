@@ -1,11 +1,5 @@
 // Original at: https://github.com/mxschmitt/try-playwright/blob/main/frontend/src/examples/javascript/todo-mvc.js
 
-// @ts-check
-
-/**
- * @import * as index from "./index"
- */
-
 /**
  * Helper function which will compare val1 with val2.
  * If they aren't equal it will throw an error.
@@ -19,15 +13,6 @@ const expectEqual = (val1, val2) => {
 }
 
 const TODO_NAME = 'Bake a cake';
-
-// const browser = await playwright.chromium.launch({
-//   slowMo: 100
-// });
-// const context = await browser.newContext({
-//   recordVideo: {
-//     dir: 'videos/'
-//   }
-// });
 
 await page.goto('https://demo.playwright.dev/todomvc');
 

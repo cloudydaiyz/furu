@@ -4,6 +4,7 @@
 FROM ubuntu:24.04
 COPY . /app
 WORKDIR /app
-RUN chmod +x /app/scripts/rds3.sh
+# RUN chmod +x /app/scripts/rds3.sh
 EXPOSE 8124 5901
-CMD [ "/app/scripts/rds3.sh" ]
+# CMD [ "/app/scripts/rds3.sh" ]
+CMD [ "/bin/bash" ]

@@ -98,7 +98,6 @@ export function initializeGuacamoleClient(
     });
 
     // Set up keyboard
-    // const keyboard = new Guacamole.Keyboard(window);
     const keyboard = new Guacamole.Keyboard(window.document);
     keyboard.onkeydown = keysym => client.sendKeyEvent(1, keysym);
     keyboard.onkeyup = keysym => client.sendKeyEvent(0, keysym);
@@ -212,13 +211,4 @@ export function cleanupGuacamole() {
     window.removeEventListener('paste', pasteEventListener);
     pasteEventListener = null;
   }
-
-  // Allow a brief moment for cleanup before making inputs focusable
-  // setTimeout(() => {
-  //   // Re-focus on a form element to help ensure keyboard is working
-  //   const firstInput = document.querySelector('#connection-form input, #connection-form select');
-  //   if (firstInput) {
-  //     (firstInput as HTMLElement).focus();
-  //   }
-  // }, 100);
 }

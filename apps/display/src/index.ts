@@ -1,7 +1,6 @@
 import { runGuacamoleServer } from "@cloudydaiyz/furu-display";
 import assert from "assert";
 
-// const DISPLAY_PORT = 6000;
 const DISPLAY_PORT = 9091;
 
 export async function launchDisplay() {

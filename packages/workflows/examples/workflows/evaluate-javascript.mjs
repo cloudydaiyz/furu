@@ -1,11 +1,5 @@
 // Original at: https://github.com/mxschmitt/try-playwright/blob/main/frontend/src/examples/javascript/evaluate-javascript.js
 
-// @ts-check
-
-/**
- * @import * as index from "./index"
- */
-
 await page.goto('https://www.example.com/');
 const dimensions = await page.evaluate(() => {
   return {
