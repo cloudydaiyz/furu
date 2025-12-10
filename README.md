@@ -1,6 +1,6 @@
 # furu
 
-**furu** is a web-based platform for Playwright test creation.
+**furu** is a web-based platform for Playwright test creation. This project is a continuation of [`apollo`](https://github.com/cloudydaiyz/apollo).
 
 ## Prerequisites
 
